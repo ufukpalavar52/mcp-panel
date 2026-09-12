@@ -1,0 +1,227 @@
+/* ------------------------------------------------------------------
+   Tema değişkenleri — CoreUI, Bootstrap'in --cui-* CSS değişkenlerini
+   kullanır. Marka rengini burada tek noktadan değiştirebilirsin.
+------------------------------------------------------------------- */
+:root {
+  --brand: #ea580c;
+  --brand-rgb: 234, 88, 12;
+  --brand-600: #c2410c;
+  --sidebar-width: 15rem;
+
+  --cui-primary: var(--brand);
+  --cui-primary-rgb: var(--brand-rgb);
+  --cui-body-font-family: var(--font-app), system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+  --cui-body-bg: #f4f5f9;
+  --cui-border-radius: 0.625rem;
+  --cui-border-radius-lg: 0.875rem;
+}
+
+[data-coreui-theme="dark"] {
+  --cui-body-bg: #0f1117;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--cui-body-font-family);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Marka rengini butonlar / linkler için bağla */
+.btn-primary {
+  --cui-btn-bg: var(--brand);
+  --cui-btn-border-color: var(--brand);
+  --cui-btn-hover-bg: var(--brand-600);
+  --cui-btn-hover-border-color: var(--brand-600);
+  --cui-btn-active-bg: var(--brand-600);
+  --cui-btn-active-border-color: var(--brand-600);
+  --cui-btn-disabled-bg: var(--brand);
+  --cui-btn-disabled-border-color: var(--brand);
+}
+
+.btn-outline-primary {
+  --cui-btn-color: var(--brand);
+  --cui-btn-border-color: var(--brand);
+  --cui-btn-hover-bg: var(--brand);
+  --cui-btn-hover-border-color: var(--brand);
+  --cui-btn-active-bg: var(--brand);
+  --cui-btn-active-border-color: var(--brand);
+}
+
+.text-primary {
+  color: var(--brand) !important;
+}
+
+.bg-primary {
+  background-color: var(--brand) !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+  border-color: rgba(var(--brand-rgb), 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(var(--brand-rgb), 0.2);
+}
+
+.form-check-input:checked {
+  background-color: var(--brand);
+  border-color: var(--brand);
+}
+
+/* ------------------------------ Kabuk ------------------------------ */
+.app-wrapper {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-inline-start: var(--sidebar-width);
+  transition: padding-inline-start 0.15s ease;
+}
+
+@media (max-width: 991.98px) {
+  .app-wrapper {
+    padding-inline-start: 0;
+  }
+}
+
+.app-sidebar {
+  /* Markanın turuncusuyla uyumlu, hafif kahve tonlu koyu zemin. */
+  --cui-sidebar-bg: #1c1512;
+  --cui-sidebar-color: #d6cfca;
+  --cui-sidebar-brand-bg: transparent;
+  --cui-sidebar-brand-color: #fff;
+  --cui-sidebar-nav-title-color: #a1918a;
+  --cui-sidebar-nav-link-color: #cfc5bf;
+  --cui-sidebar-nav-link-icon-color: #9a8b84;
+  --cui-sidebar-nav-link-hover-color: #fff;
+  --cui-sidebar-nav-link-hover-bg: rgba(var(--brand-rgb), 0.14);
+  --cui-sidebar-nav-link-hover-icon-color: var(--brand);
+  --cui-sidebar-nav-link-active-color: #fff;
+  --cui-sidebar-nav-link-active-bg: var(--brand);
+  --cui-sidebar-nav-link-active-icon-color: #fff;
+  --cui-sidebar-nav-group-bg: rgba(0, 0, 0, 0.2);
+  --cui-sidebar-width: var(--sidebar-width);
+  border-inline-end: 1px solid rgba(234, 88, 12, 0.14);
+}
+
+.app-sidebar .sidebar-header,
+.app-sidebar .sidebar-footer {
+  border-color: rgba(234, 88, 12, 0.16);
+}
+
+/* Aktif öğe markanın gölgesiyle zeminden ayrılsın. */
+.app-sidebar .nav-link.active {
+  box-shadow: 0 4px 12px rgba(var(--brand-rgb), 0.35);
+}
+
+.app-sidebar .nav-link {
+  border-radius: 0.5rem;
+  margin: 0.125rem 0.625rem;
+  padding-block: 0.55rem;
+  font-size: 0.875rem;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 1029;
+  background: var(--cui-body-bg);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--cui-border-color);
+}
+
+/* ----------------------------- Grafikler -----------------------------
+   customTooltips, ipucu <div>'ünü canvas'ın ebeveynine ekler ve konumu
+   canvas.offsetTop/Left'ten hesaplar. Ebeveyn `relative` değilse ipucu
+   akışa girip sarmalayıcıyı uzatıyor, chart.js de canvas'ı ona göre
+   büyütüp sonsuz döngü oluşturuyordu. Sabit yükseklik bunu keser.
+--------------------------------------------------------------------- */
+.chart-wrapper {
+  position: relative;
+  height: var(--chart-height, 280px);
+}
+
+/* --------------------------- Kart / tablo --------------------------- */
+.card {
+  border: 1px solid var(--cui-border-color-translucent);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.stat-card .stat-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.75rem;
+}
+
+.table > :not(caption) > * > * {
+  padding-block: 0.75rem;
+}
+
+.table thead th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cui-secondary-color);
+  font-weight: 600;
+}
+
+.avatar-initials {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  flex: 0 0 auto;
+}
+
+/* ----------------------------- Auth ekranı ----------------------------- */
+.auth-shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr;
+  background: var(--cui-body-bg);
+}
+
+@media (min-width: 992px) {
+  .auth-shell {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.auth-aside {
+  display: none;
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(145deg, #7c2d12 0%, var(--brand) 55%, #f59e0b 100%);
+}
+
+@media (min-width: 992px) {
+  .auth-aside {
+    display: flex;
+  }
+}
+
+.auth-aside::after {
+  content: "";
+  position: absolute;
+  inset: auto -20% -35% -20%;
+  height: 60%;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.18), transparent);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 26rem;
+}
+
+.mono {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}

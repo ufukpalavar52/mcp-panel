@@ -1,0 +1,41 @@
+{
+  "name": "mcp-panel",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:logged": "mkdir -p \"${MCP_LOG_DIR:-$HOME/mcp-logs}\" && next dev --port \"${PORT:-3000}\" 2>&1 | tee -a \"${MCP_LOG_DIR:-$HOME/mcp-logs}/mcp-panel.log\"",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@coreui/chartjs": "^4.2.0",
+    "@coreui/coreui": "^5.9.0",
+    "@coreui/icons": "^3.1.0",
+    "@coreui/icons-react": "^2.3.0",
+    "@coreui/react": "^5.13.0",
+    "@coreui/react-chartjs": "^3.0.0",
+    "chart.js": "^4.5.1",
+    "next": "16.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.6",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.1.1",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.1",
+    "jsdom": "^29.1.1",
+    "typescript": "^5",
+    "vitest": "^4.1.11"
+  }
+}

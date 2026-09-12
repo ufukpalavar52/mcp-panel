@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="MCP Panel">
+  <title>MCP Panel</title>
+
+  <!-- The tile carries its own background so the mark keeps its contrast on a light or a
+       dark browser chrome, which a bare glyph does not. -->
+  <rect width="32" height="32" rx="7" fill="#ea580c"/>
+
+  <!-- One hub reaching three machines: what the panel does, drawn rather than lettered.
+       Three heavy spokes and four dots are all that survives at 16px, so that is all
+       there is.
+
+       The hub sits at y=17.9 rather than at the middle. Three arms around a centre are
+       never square with their own bounding box — two of them are low and one is high — so
+       a mark centred on its hub reads as sitting too high in the tile. -->
+  <g stroke="#fff" stroke-width="2.2" stroke-linecap="round">
+    <path d="M16 17.9 16 10.3"/>
+    <path d="M16 17.9 22.6 21.7"/>
+    <path d="M16 17.9 9.4 21.7"/>
+  </g>
+  <g fill="#fff">
+    <circle cx="16" cy="17.9" r="3.2"/>
+    <circle cx="16" cy="10.3" r="2.4"/>
+    <circle cx="22.6" cy="21.7" r="2.4"/>
+    <circle cx="9.4" cy="21.7" r="2.4"/>
+  </g>
+</svg>

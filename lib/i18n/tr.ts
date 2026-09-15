@@ -605,6 +605,12 @@ export const tr = {
   "tools.run.planOnly": "Hiçbir şey çalıştırılmaz. MCP sunucusu yalnızca ne yapılacağına karar verir; komutu gerçekten koşacak yürütücü henüz yok.",
   "tools.run.noInputs": "Bu aracın parametresi yok — doğrudan çalıştırabilirsin.",
   "tools.run.missing": "Zorunlu alan(lar) boş: {fields}",
+  "tools.run.attach": "Dosyadan yükle",
+  "tools.run.attached": "{name} yüklendi ({size})",
+  "tools.run.attachTooLarge": "{name} çok büyük ({size}). En fazla {max} yüklenebilir.",
+  "tools.run.attachBinary":
+    "{name} bir metin dosyası değil. Buraya yalnızca metin yüklenebilir.",
+  "tools.run.attachFailed": "{name} okunamadı.",
   "tools.run.unexpected": "Beklenmeyen bir hata oluştu.",
   "tools.run.targets": "Hedef: {targets}",
   "tools.run.masked": "Gizlenen girdi(ler): {fields}",

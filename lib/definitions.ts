@@ -576,6 +576,18 @@ export function toolInputSchema(inputs: DynamicInput[]): ToolInputSchema {
       case "select":
         if (input.options.length > 0) property.enum = [...input.options];
         break;
+      // Both of these want a bigger box, and the schema is the only channel that reaches
+      // the run screen: without this they arrive there as a plain string, get a one-line
+      // field, and a script cannot be pasted into the form at all.
+      //
+      // It is a rendering hint and nothing more. Whether a value skips the
+      // shell-metacharacter scan is decided from the definition's own input type, where
+      // `block` and `textarea` are not the same thing — never from the schema, which any
+      // caller can write.
+      case "textarea":
+      case "block":
+        property.format = "textarea";
+        break;
       default:
         break;
     }

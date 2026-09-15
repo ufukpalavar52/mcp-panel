@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import CIcon from "@coreui/icons-react";
 import {
   cilCheckCircle,
@@ -19,6 +19,7 @@ import {
   CFormLabel,
   CFormSelect,
   CFormText,
+  CFormTextarea,
   CModal,
   CModalBody,
   CModalFooter,
@@ -372,6 +373,18 @@ function renderControl(
     );
   }
 
+  // A file's contents, a configuration, a script: the schema asked for a box rather than
+  // a line.
+  if (field.format === "textarea") {
+    return (
+      <TextBody
+        id={id}
+        value={(value as string | undefined) ?? ""}
+        onChange={onChange}
+      />
+    );
+  }
+
   return (
     <CFormInput
       id={id}
@@ -386,6 +399,121 @@ function renderControl(
       }
     />
   );
+}
+
+/** The most text that may be loaded from a file, in bytes. */
+const BODY_LIMIT = 256 * 1024;
+
+/**
+ * A body of text, with the option of reading it out of a file.
+ *
+ * The file never leaves the browser and there is no upload endpoint behind this: what is
+ * read becomes the field's value and travels the same way a typed one does. A separate
+ * path to the server would be a second way in to guard, for a result this already
+ * reaches.
+ */
+function TextBody({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const t = useT();
+  const picker = useRef<HTMLInputElement>(null);
+  const [loaded, setLoaded] = useState<string | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+
+  const take = async (file: File) => {
+    setLoaded(null);
+    setProblem(null);
+
+    if (file.size > BODY_LIMIT) {
+      setProblem(
+        t("tools.run.attachTooLarge", {
+          name: file.name,
+          size: sizeOf(file.size),
+          max: sizeOf(BODY_LIMIT),
+        }),
+      );
+      return;
+    }
+
+    let text: string;
+    try {
+      text = await file.text();
+    } catch {
+      setProblem(t("tools.run.attachFailed", { name: file.name }));
+      return;
+    }
+
+    // A NUL byte is the same test git uses to call a file binary, and it is the one that
+    // matters here: this value ends up inside a quoted heredoc, and a heredoc cannot carry
+    // a NUL at all. Decoding already replaced whatever else was not UTF-8, so refusing on
+    // replacement characters too would turn away a latin-1 file that would have been fine.
+    if (text.includes("\u0000")) {
+      setProblem(t("tools.run.attachBinary", { name: file.name }));
+      return;
+    }
+
+    onChange(text);
+    setLoaded(file.name);
+  };
+
+  return (
+    <>
+      <CFormTextarea
+        id={id}
+        rows={10}
+        className="font-monospace"
+        value={value}
+        onChange={(event) => {
+          // Typing makes the filename a lie, so it stops being shown. The text stays.
+          setLoaded(null);
+          onChange(event.target.value);
+        }}
+      />
+      <div className="d-flex align-items-center gap-2 mt-1">
+        <CButton
+          type="button"
+          color="secondary"
+          variant="outline"
+          size="sm"
+          onClick={() => picker.current?.click()}
+        >
+          {t("tools.run.attach")}
+        </CButton>
+        {loaded && (
+          <CFormText className="mb-0">
+            {t("tools.run.attached", { name: loaded, size: sizeOf(value.length) })}
+          </CFormText>
+        )}
+        {problem && <CFormText className="mb-0 text-danger">{problem}</CFormText>}
+      </div>
+      <input
+        ref={picker}
+        type="file"
+        className="d-none"
+        // Cleared on every pick so choosing the same file twice fires a change both times —
+        // which is what somebody does after editing that file and wanting the new version.
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (file) void take(file);
+        }}
+      />
+    </>
+  );
+}
+
+function sizeOf(bytes: number) {
+  return bytes < 1024
+    ? `${bytes} B`
+    : bytes < 1024 * 1024
+      ? `${Math.round(bytes / 1024)} KB`
+      : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function inputType(field: Field) {

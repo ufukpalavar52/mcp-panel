@@ -48,6 +48,39 @@ export const authApi = {
       { anonymous: true },
     ),
 
+  /**
+   * Changes your own password.
+   *
+   * The current one is sent even though the request already carries a session: a screen
+   * left open is a session anybody walking past has, and knowing the old password
+   * authenticates the person rather than the session.
+   */
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.post<void>("/api/v1/auth/password", { currentPassword, newPassword }),
+
+  /** How many sign-ins of yours are still live. A count; no device and no place. */
+  sessions: () => api.get<{ active: number }>("/api/v1/auth/sessions"),
+
+  /**
+   * Asks for a reset link.
+   *
+   * Answers the same whether the address has an account or not, so the screen can only
+   * ever say "if that address has an account, a link is on its way". Anything more
+   * specific would turn the login page into a way of finding out which addresses exist.
+   */
+  forgotPassword: (email: string) =>
+    api.post<void>("/api/v1/auth/password/forgot", { email }, { anonymous: true }),
+
+  /** Sets a password against a reset link. No current password — not knowing it is why. */
+  resetPassword: (token: string, newPassword: string) =>
+    api.post<void>(
+      `/api/v1/auth/password/reset/${encodeURIComponent(token)}`,
+      { newPassword },
+      { anonymous: true },
+    ),
+
+  logoutEverywhere: () => api.post<void>("/api/v1/auth/logout-all"),
+
   logout: () => api.post<void>("/api/v1/auth/logout"),
 
   me: () => api.get<UserPayload>("/api/v1/users/me"),
@@ -226,6 +259,15 @@ export const usersApi = {
   update: (id: number, body: unknown) => api.put<UserPayload>(`/api/v1/users/${id}`, body),
   suspend: (id: number) => api.post<UserPayload>(`/api/v1/users/${id}/suspend`),
   invite: (body: unknown) => api.post<InvitationPayload>("/api/v1/users/invitations", body),
+
+  /**
+   * Creates an account outright, with a password the administrator picks.
+   *
+   * The way in that needs no mail — which is what makes requiring mail for invitations
+   * safe, since a misconfigured SMTP host then locks nobody out.
+   */
+  create: (body: { fullName: string; email: string; role: string; password: string }) =>
+    api.post<UserPayload>("/api/v1/users", body),
 };
 
 /* ---------------------------------- logs ---------------------------------- */

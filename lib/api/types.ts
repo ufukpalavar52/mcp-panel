@@ -337,6 +337,8 @@ export type UserPayload = {
   avatarUrl: string | null;
   lastLoginAt: string | null;
   createdAt: string;
+  /** True while an administrator's chosen password is still in place. */
+  mustChangePassword?: boolean;
 };
 
 export type ToolCallPayload = {

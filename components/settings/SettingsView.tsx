@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CIcon from "@coreui/icons-react";
 import { cilInfo, cilLockLocked, cilSave } from "@coreui/icons";
 import {
@@ -12,6 +12,7 @@ import {
   CCardHeader,
   CCol,
   CForm,
+  CFormFeedback,
   CFormInput,
   CFormLabel,
   CFormSelect,
@@ -20,16 +21,18 @@ import {
   CFormTextarea,
   CInputGroup,
   CInputGroupText,
-  CListGroup,
-  CListGroupItem,
   CNav,
   CNavItem,
   CNavLink,
   CRow,
+  CSpinner,
   CTabContent,
   CTabPane,
 } from "@coreui/react";
 import PageHeader from "@/components/PageHeader";
+import { authApi } from "@/lib/api/endpoints";
+import { clearSession } from "@/lib/auth/session-store";
+import { notify } from "@/lib/ui/toast-store";
 import {
   localeNames,
   locales,
@@ -48,8 +51,54 @@ const tabs: { key: string; labelKey: MessageKey }[] = [
 
 export default function SettingsView() {
   const [active, setActive] = useState("profile");
+
   const t = useT();
   const locale = useLocale();
+
+  // Disabled until now, with a "not wired" tooltip, because there was no endpoint behind
+  // it. There is one — the same one the forced change screen uses.
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changing, setChanging] = useState(false);
+  const [sessions, setSessions] = useState<number | null>(null);
+  const [endingSessions, setEndingSessions] = useState(false);
+
+  useEffect(() => {
+    authApi.sessions()
+      .then((answer) => setSessions(answer.active))
+      // A count nobody can read is not worth an error banner on a settings page.
+      .catch(() => setSessions(null));
+  }, []);
+
+  async function endEverywhere() {
+    setEndingSessions(true);
+    try {
+      await authApi.logoutEverywhere();
+      // This screen included: signing out everywhere that leaves the screen you pressed it
+      // on signed in has not done what it says.
+      clearSession();
+    } catch (error) {
+      notify.failure(error instanceof Error ? error.message : t("tools.run.unexpected"));
+      setEndingSessions(false);
+    }
+  }
+
+  async function changePassword() {
+    setChanging(true);
+    try {
+      await authApi.changePassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      notify.success("settings.passwordChanged");
+    } catch (error) {
+      notify.failure(error instanceof Error ? error.message : t("tools.run.unexpected"));
+    } finally {
+      setChanging(false);
+    }
+  }
+
 
   return (
     <>
@@ -185,7 +234,12 @@ export default function SettingsView() {
                         <CInputGroupText>
                           <CIcon icon={cilLockLocked} />
                         </CInputGroupText>
-                        <CFormInput id="pw-current" type="password" />
+                        <CFormInput
+                          id="pw-current"
+                          type="password"
+                          value={currentPassword}
+                          onChange={(event) => setCurrentPassword(event.target.value)}
+                        />
                       </CInputGroup>
                     </div>
                     <div>
@@ -194,14 +248,55 @@ export default function SettingsView() {
                         <CInputGroupText>
                           <CIcon icon={cilLockLocked} />
                         </CInputGroupText>
-                        <CFormInput id="pw-new" type="password" />
+                        <CFormInput
+                          id="pw-new"
+                          type="password"
+                          value={newPassword}
+                          onChange={(event) => setNewPassword(event.target.value)}
+                        />
                       </CInputGroup>
                       <CFormText>
                         {t("settings.passwordRule")}
                       </CFormText>
                     </div>
                     <div>
-                      <CButton color="primary" disabled title={t("common.notWired")}>
+                      {/* Asked for because otherwise the form reads as "password, password
+                          again" — which is how somebody types their new password into the
+                          field that wanted the old one, is refused, and is then told their
+                          new password does not work. */}
+                      <CFormLabel htmlFor="pw-confirm">
+                        {t("settings.confirmPassword")}
+                      </CFormLabel>
+                      <CInputGroup className="has-validation">
+                        <CInputGroupText>
+                          <CIcon icon={cilLockLocked} />
+                        </CInputGroupText>
+                        <CFormInput
+                          id="pw-confirm"
+                          type="password"
+                          value={confirmPassword}
+                          invalid={
+                            confirmPassword.length > 0 && confirmPassword !== newPassword
+                          }
+                          onChange={(event) => setConfirmPassword(event.target.value)}
+                        />
+                        <CFormFeedback invalid>
+                          {t("settings.passwordMismatch")}
+                        </CFormFeedback>
+                      </CInputGroup>
+                    </div>
+                    <div>
+                      <CButton
+                        color="primary"
+                        disabled={
+                          changing
+                          || !currentPassword
+                          || newPassword.length < 12
+                          || newPassword !== confirmPassword
+                        }
+                        onClick={changePassword}
+                      >
+                        {changing && <CSpinner size="sm" className="me-2" />}
                         {t("settings.updatePassword")}
                       </CButton>
                     </div>
@@ -209,36 +304,31 @@ export default function SettingsView() {
                 </CCol>
                 <CCol lg={6}>
                   <h2 className="h6 fw-semibold mb-3">{t("settings.sessions")}</h2>
-                  <CListGroup>
-                    <CListGroupItem className="d-flex justify-content-between align-items-center">
-                      <div>
-                        <div className="fw-semibold small">
-                          macOS · Chrome 141
-                        </div>
-                        <div className="small text-body-secondary">
-                          {t("settings.sessionLocation")} · {t("settings.currentSession")}
-                        </div>
-                      </div>
-                      <span className="badge text-bg-success">{t("users.status.active")}</span>
-                    </CListGroupItem>
-                    <CListGroupItem className="d-flex justify-content-between align-items-center">
-                      <div>
-                        <div className="fw-semibold small">iOS · Safari</div>
-                        <div className="small text-body-secondary">
-                          Ankara · 2026-08-18
-                        </div>
-                      </div>
-                      <CButton
-                        color="danger"
-                        variant="ghost"
-                        size="sm"
-                        disabled
-                        title={t("common.notWired")}
-                      >
-                        {t("settings.closeSession")}
-                      </CButton>
-                    </CListGroupItem>
-                  </CListGroup>
+                  {/* A count, and nothing else. What stood here was a device, a city
+                      and a date, all of them invented — the city was a translation string.
+                      None of it is recorded anywhere, so none of it is shown: a number
+                      that is true is worth more than a list that is not.
+
+                      It is also the question somebody actually comes here to ask — "is
+                      anything signed in that should not be" — which the button answers. */}
+                  <p className="small text-body-secondary mb-2">
+                    {sessions === null
+                      ? t("common.loading")
+                      : t("settings.sessionsActive", { count: sessions })}
+                  </p>
+                  <CButton
+                    color="danger"
+                    variant="outline"
+                    size="sm"
+                    disabled={endingSessions}
+                    onClick={endEverywhere}
+                  >
+                    {endingSessions && <CSpinner size="sm" className="me-2" />}
+                    {t("settings.endEverywhere")}
+                  </CButton>
+                  <CFormText className="d-block mt-1">
+                    {t("settings.endEverywhereHint")}
+                  </CFormText>
                   <CFormSwitch
                     className="mt-3"
                     id="mfa"

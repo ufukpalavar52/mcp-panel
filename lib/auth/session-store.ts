@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { clearToasts } from "@/lib/ui/toast-store";
 
 /** Account shape returned by the gateway alongside the tokens. */
 export type SessionUser = {
@@ -9,6 +10,15 @@ export type SessionUser = {
   fullName: string;
   role: "admin" | "developer" | "viewer";
   status: "active" | "invited" | "suspended";
+
+  /**
+   * Whether this password was chosen by somebody else.
+   *
+   * Set when an administrator created the account with a password they picked. Two people
+   * know it and only one owns the account, so the panel shows nothing but the password
+   * screen until it has been replaced.
+   */
+  mustChangePassword?: boolean;
   team: string | null;
   avatarUrl: string | null;
 };
@@ -93,6 +103,11 @@ export function clearSession() {
   } catch {
     // Nothing to clean up.
   }
+
+  // The toast queue goes with it. It is module state and the login screen draws no
+  // toaster, so anything still queued waited invisibly and turned up after the next
+  // sign-in — describing something that happened to a session that no longer exists.
+  clearToasts();
   emit();
 }
 

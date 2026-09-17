@@ -49,6 +49,20 @@ export function useToasts(): Toast[] {
   return useSyncExternalStore(subscribe, getSnapshot, () => EMPTY);
 }
 
+/**
+ * Throws away everything still queued.
+ *
+ * Called when a session ends. The queue is module state and the login screen draws no
+ * toaster, so a message raised before signing out simply waited — invisible — and turned
+ * up after the next sign-in, describing something that happened to somebody else's
+ * session. Where that message was about whether an action succeeded, it was not merely
+ * confusing: it said the opposite of what had happened.
+ */
+export function clearToasts() {
+  state = [];
+  emit();
+}
+
 export function dismissToast(id: number) {
   state = state.filter((toast) => toast.id !== id);
   emit();

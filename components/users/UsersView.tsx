@@ -16,16 +16,6 @@ import {
   CDropdownItem,
   CDropdownMenu,
   CDropdownToggle,
-  CForm,
-  CFormInput,
-  CFormLabel,
-  CFormSelect,
-  CFormText,
-  CModal,
-  CModalBody,
-  CModalFooter,
-  CModalHeader,
-  CModalTitle,
   CRow,
   CTable,
   CTableBody,
@@ -43,7 +33,8 @@ import {
   userStatusKeys,
 } from "@/lib/data";
 import ResourceState from "@/components/ResourceState";
-import { useUsers, useUsersStatus } from "@/lib/api/users-store";
+import { useUsers, useUsersStatus, usersStore } from "@/lib/api/users-store";
+import AddUserModal from "./AddUserModal";
 import { useT } from "@/lib/i18n";
 
 function initials(name: string) {
@@ -69,7 +60,7 @@ export default function UsersView() {
         actions={
           <CButton color="primary" onClick={() => setInviteOpen(true)}>
             <CIcon icon={cilEnvelopeClosed} className="me-2" />
-            {t("users.invite")}
+            {t("users.add")}
           </CButton>
         }
       />
@@ -189,57 +180,12 @@ export default function UsersView() {
       </CCard>
       </ResourceState>
 
-      <CModal
+      <AddUserModal
         visible={inviteOpen}
         onClose={() => setInviteOpen(false)}
-        alignment="center"
-      >
-        <CModalHeader>
-          <CModalTitle>{t("users.invite")}</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          <CForm className="row g-3">
-            <div className="col-12">
-              <CFormLabel htmlFor="invite-email">{t("users.invite.email")}</CFormLabel>
-              <CFormInput
-                id="invite-email"
-                type="email"
-                placeholder="ad@acme.dev"
-              />
-              <CFormText>{t("users.invite.hint")}</CFormText>
-            </div>
-            <div className="col-md-6">
-              <CFormLabel htmlFor="invite-role">{t("users.column.role")}</CFormLabel>
-              <CFormSelect id="invite-role">
-                <option value="developer">{t("users.role.developer")}</option>
-                <option value="viewer">{t("users.role.viewer")}</option>
-                <option value="admin">{t("users.role.admin")}</option>
-              </CFormSelect>
-            </div>
-            <div className="col-md-6">
-              <CFormLabel htmlFor="invite-team">{t("users.column.team")}</CFormLabel>
-              <CFormSelect id="invite-team">
-                <option>Platform</option>
-                <option>{t("team.data")}</option>
-                <option>{t("team.product")}</option>
-                <option>{t("team.security")}</option>
-              </CFormSelect>
-            </div>
-          </CForm>
-        </CModalBody>
-        <CModalFooter>
-          <CButton
-            color="secondary"
-            variant="outline"
-            onClick={() => setInviteOpen(false)}
-          >
-            {t("common.cancel")}
-          </CButton>
-          <CButton color="primary" onClick={() => setInviteOpen(false)}>
-            {t("users.invite.send")}
-          </CButton>
-        </CModalFooter>
-      </CModal>
+        onAdded={() => void usersStore.reload()}
+      />
+
     </>
   );
 }

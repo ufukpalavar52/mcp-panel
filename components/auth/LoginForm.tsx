@@ -116,7 +116,7 @@ export default function LoginForm() {
             <div className="d-flex justify-content-between align-items-center">
               <CFormLabel htmlFor="password">{t("login.password")}</CFormLabel>
               <Link
-                href="/login"
+                href="/forgot"
                 className="small text-decoration-none mb-2"
               >
                 {t("login.forgot")}

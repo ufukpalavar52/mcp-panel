@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import CIcon from "@coreui/icons-react";
 import {
   cilAccountLogout,
-  cilBell,
   cilMenu,
   cilSearch,
   cilSettings,
@@ -13,7 +12,6 @@ import {
 } from "@coreui/icons";
 import {
   CAvatar,
-  CBadge,
   CBreadcrumb,
   CBreadcrumbItem,
   CContainer,
@@ -110,51 +108,6 @@ export default function AppHeader({ onToggleSidebar }: Props) {
               />
             </CInputGroup>
           </div>
-
-          <CDropdown variant="nav-item" placement="bottom-end">
-            <CDropdownToggle caret={false} aria-label={t("header.notifications")}>
-              <span className="position-relative">
-                <CIcon icon={cilBell} size="lg" />
-                <CBadge
-                  color="danger"
-                  position="top-end"
-                  shape="rounded-pill"
-                  className="p-1"
-                >
-                  <span className="visually-hidden">{t("header.unread")}</span>
-                </CBadge>
-              </span>
-            </CDropdownToggle>
-            <CDropdownMenu className="pt-0" style={{ minWidth: 300 }}>
-              <CDropdownHeader className="bg-body-secondary fw-semibold py-2">
-                {t("header.notifications")}
-              </CDropdownHeader>
-              <CDropdownItem className="text-wrap">
-                <div className="fw-semibold">
-                  {t("header.notification.fleetHalted")}
-                </div>
-                <div className="small text-body-secondary">
-                  {t("header.time.hoursAgo", { count: 3 })}
-                </div>
-              </CDropdownItem>
-              <CDropdownItem className="text-wrap">
-                <div className="fw-semibold">
-                  {t("header.notification.modelSlow")}
-                </div>
-                <div className="small text-body-secondary">
-                  {t("header.time.hoursAgo", { count: 1 })}
-                </div>
-              </CDropdownItem>
-              <CDropdownItem className="text-wrap">
-                <div className="fw-semibold">
-                  {t("header.notification.inviteAccepted")}
-                </div>
-                <div className="small text-body-secondary">
-                  {t("header.time.yesterday")}
-                </div>
-              </CDropdownItem>
-            </CDropdownMenu>
-          </CDropdown>
 
           <LocaleToggle />
 

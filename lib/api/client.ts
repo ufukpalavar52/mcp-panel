@@ -184,10 +184,21 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   if (!response.ok) {
     throw await readError(response);
   }
-  if (response.status === 204) {
+  // Any empty body, not only a 204. An endpoint answering 202 with nothing in it went
+  // straight to json() and threw "Unexpected end of JSON input" — a parser error standing
+  // in for a request that had in fact succeeded. Content-Length is the honest test: what
+  // matters is whether there is a body, not which success code carried it.
+  const empty = response.status === 204
+    || response.headers.get("content-length") === "0";
+
+  if (empty) {
     return undefined as T;
   }
-  return (await response.json()) as T;
+
+  const text = await response.text();
+
+  // A body that is present but blank counts too: some proxies drop Content-Length.
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 export const api = {

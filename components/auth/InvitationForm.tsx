@@ -1,16 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import CIcon from "@coreui/icons-react";
-import { cilEnvelopeClosed, cilLockLocked, cilUser } from "@coreui/icons";
+import { cilLockLocked, cilUser } from "@coreui/icons";
 import {
   CAlert,
   CButton,
   CCard,
   CCardBody,
   CForm,
-  CFormCheck,
   CFormFeedback,
   CFormInput,
   CFormLabel,
@@ -33,7 +31,7 @@ function strengthOf(password: string) {
   return score;
 }
 
-export default function RegisterForm() {
+export default function InvitationForm({ token }: { token: string }) {
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -59,9 +57,7 @@ export default function RegisterForm() {
 
   const valid = {
     name: form.name.trim().length >= 3,
-    email: /^\S+@\S+\.\S+$/.test(form.email),
     password: score >= 50,
-    terms: form.terms,
   };
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -73,7 +69,7 @@ export default function RegisterForm() {
 
     setLoading(true);
     try {
-      const auth = await authApi.register(form.name, form.email, form.password);
+      const auth = await authApi.acceptInvitation(token, form.name, form.password);
 
       // The gateway signs the new account in straight away, so there is no second
       // login step; the confirmation screen is shown before redirecting.
@@ -102,25 +98,25 @@ export default function RegisterForm() {
     <CCard className="auth-card shadow-sm">
       <CCardBody className="p-4 p-sm-5">
         <div className="mb-4">
-          <h1 className="h3 fw-semibold mb-1">{t("register.title")}</h1>
+          <h1 className="h3 fw-semibold mb-1">{t("invitation.title")}</h1>
           <p className="text-body-secondary mb-0 small">
-            {t("register.subtitle")}
+            {t("invitation.subtitle")}
           </p>
         </div>
 
         {done ? (
           <div className="text-center py-4">
             <div className="fs-1">🎉</div>
-            <h2 className="h5 fw-semibold mt-2">{t("register.createdTitle")}</h2>
+            <h2 className="h5 fw-semibold mt-2">{t("invitation.createdTitle")}</h2>
             <p className="text-body-secondary small">
-              {t("register.created", { email: form.email })}
+              {t("invitation.created")}
             </p>
             <button
               type="button"
               className="btn btn-primary mt-2"
               onClick={() => router.replace("/dashboard")}
             >
-              {t("register.continue")}
+              {t("invitation.continue")}
             </button>
           </div>
         ) : (
@@ -146,25 +142,6 @@ export default function RegisterForm() {
                     }
                   />
                   <CFormFeedback invalid>{t("register.nameInvalid")}</CFormFeedback>
-                </CInputGroup>
-              </div>
-
-              <div className="mb-3">
-                <CFormLabel htmlFor="reg-email">{t("login.email")}</CFormLabel>
-                <CInputGroup className="has-validation">
-                  <CInputGroupText>
-                    <CIcon icon={cilEnvelopeClosed} />
-                  </CInputGroupText>
-                  <CFormInput
-                    id="reg-email"
-                    type="email"
-                    value={form.email}
-                    invalid={submitted && !valid.email}
-                    onChange={(event) =>
-                      setForm({ ...form, email: event.target.value })
-                    }
-                  />
-                  <CFormFeedback invalid>{t("login.emailInvalid")}</CFormFeedback>
                 </CInputGroup>
               </div>
 
@@ -202,23 +179,6 @@ export default function RegisterForm() {
                 )}
               </div>
 
-              <CFormCheck
-                id="reg-terms"
-                className="mb-4"
-                checked={form.terms}
-                invalid={submitted && !valid.terms}
-                onChange={(event) =>
-                  setForm({ ...form, terms: event.target.checked })
-                }
-                label={
-                  <span className="small">
-                    {t("register.termsSuffix")}{" "}
-                    <Link href="/register" className="text-decoration-none">
-                      {t("register.terms")}
-                    </Link>
-                  </span>
-                }
-              />
 
               <CButton
                 type="submit"
@@ -227,16 +187,9 @@ export default function RegisterForm() {
                 disabled={loading}
               >
                 {loading && <CSpinner size="sm" className="me-2" />}
-                {t("register.submit")}
+                {t("invitation.submit")}
               </CButton>
             </CForm>
-
-            <p className="text-center text-body-secondary small mt-4 mb-0">
-              {t("register.haveAccount")}{" "}
-              <Link href="/login" className="text-decoration-none">
-                {t("login.submit")}
-              </Link>
-            </p>
           </>
         )}
       </CCardBody>

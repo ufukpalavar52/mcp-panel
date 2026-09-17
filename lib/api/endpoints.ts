@@ -2,6 +2,7 @@
 
 import { api } from "./client";
 import type {
+  DefinitionAccessPayload,
   AiModelPayload,
   AuditEventPayload,
   DailyCallCountPayload,
@@ -33,16 +34,34 @@ export const authApi = {
   login: (email: string, password: string) =>
     api.post<AuthPayload>("/api/v1/auth/login", { email, password }, { anonymous: true }),
 
-  register: (fullName: string, email: string, password: string) =>
+  /**
+   * Turns an invitation into an account, and signs the person in.
+   *
+   * The only way into this system: open registration was removed. No email and no role —
+   * both were decided by whoever sent the invitation and are read off it. A form that took
+   * an email would let the invited person make an account for somebody else.
+   */
+  acceptInvitation: (token: string, fullName: string, password: string) =>
     api.post<AuthPayload>(
-      "/api/v1/auth/register",
-      { fullName, email, password, acceptTerms: true },
+      `/api/v1/auth/invitations/${encodeURIComponent(token)}/accept`,
+      { fullName, password },
       { anonymous: true },
     ),
 
   logout: () => api.post<void>("/api/v1/auth/logout"),
 
   me: () => api.get<UserPayload>("/api/v1/users/me"),
+};
+
+/* ---------------------------- definition access --------------------------- */
+
+export const definitionAccessApi = {
+  get: (id: number) =>
+    api.get<DefinitionAccessPayload>(`/api/v1/definitions/${id}/access`),
+
+  /** Replaced wholesale, the way a definition's actions are. */
+  replace: (id: number, body: DefinitionAccessPayload) =>
+    api.put<DefinitionAccessPayload>(`/api/v1/definitions/${id}/access`, body),
 };
 
 /* -------------------------------- models -------------------------------- */

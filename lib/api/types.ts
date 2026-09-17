@@ -388,3 +388,25 @@ export type InvitationPayload = {
   token: string;
   expiresAt: string;
 };
+
+/**
+ * Who may reach a definition.
+ *
+ * `OPEN` is everybody who can sign in; `RESTRICTED` is the people listed and nobody else.
+ * An explicit mode rather than "an empty list means everybody" — with the implicit form,
+ * removing the last person would quietly reopen the definition and nothing on the screen
+ * would change.
+ */
+export type DefinitionAccessPayload = {
+  access: "OPEN" | "RESTRICTED";
+  permissions: {
+    userId: number;
+    /** Absent when sending; the gateway fills these in on the way back. */
+    email?: string;
+    fullName?: string;
+    canRun: boolean;
+    /** Implies `canRun`: somebody who may rewrite the command may run what they wrote. */
+    canEdit: boolean;
+  }[];
+};
+

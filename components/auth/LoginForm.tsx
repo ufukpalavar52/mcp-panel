@@ -167,13 +167,6 @@ export default function LoginForm() {
           </CButton>
         </CForm>
 
-        <p className="text-center text-body-secondary small mt-4 mb-0">
-          {t("login.noAccount")}{" "}
-          <Link href="/register" className="text-decoration-none">
-            {t("login.register")}
-          </Link>
-        </p>
-
       </CCardBody>
     </CCard>
   );

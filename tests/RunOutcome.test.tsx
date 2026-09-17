@@ -26,6 +26,7 @@ function run(overrides: Partial<RunPayload> = {}): RunPayload {
     statement: "SELECT domain, count(*) FROM tblAccounts GROUP BY domain",
     startedAt: "2026-08-31T13:00:00Z",
     finishedAt: "2026-08-31T13:00:01Z",
+    steps: null,
     targets: [
       {
         address: "127.0.0.1",
@@ -263,3 +264,138 @@ describe("RunOutcome", () => {
     expect(await screen.findByText(/GROUP BY domain/)).toBeInTheDocument();
   });
 });
+
+/**
+ * A job approved whole runs several actions under one reference.
+ *
+ * "Write the script" and "run the script" are one decision and one job. Looking it up
+ * returned only the first action, so the console showed the write — which prints nothing —
+ * while the output somebody had been waiting for sat unread behind it. The run had
+ * succeeded; the screen said nothing had come back.
+ */
+describe("a job with several actions", () => {
+  it("shows the output of every action, not just the first", async () => {
+    vi.mocked(runsApi.get).mockResolvedValue(
+      run({
+        actionName: "Dosyayi yaz",
+        statement: "cat > /tmp/fib.py <<'E'\nprint(1)\nE",
+        targets: [
+          {
+            address: "192.168.139.110",
+            status: "succeeded",
+            exitCode: 0,
+            durationMs: 10,
+            stdoutExcerpt: "(no output)",
+            stderrExcerpt: null,
+            rows: null,
+          },
+        ],
+        steps: [
+          run({
+            actionName: "Dosyayi yaz",
+            statement: "cat > /tmp/fib.py <<'E'\nprint(1)\nE",
+            targets: [
+              {
+                address: "192.168.139.110",
+                status: "succeeded",
+                exitCode: 0,
+                durationMs: 10,
+                stdoutExcerpt: "(no output)",
+                stderrExcerpt: null,
+                rows: null,
+              },
+            ],
+          }),
+          run({
+            actionRef: "act-2",
+            actionName: "Dosyayi calistir",
+            statement: "python3 /tmp/fib.py",
+            targets: [
+              {
+                address: "192.168.139.110",
+                status: "succeeded",
+                exitCode: 0,
+                durationMs: 40,
+                stdoutExcerpt: "[0, 1, 1, 2, 3, 5]",
+                stderrExcerpt: null,
+                rows: null,
+              },
+            ],
+          }),
+        ],
+      }),
+    );
+
+    render(<RunOutcome runRef="run-1" />);
+
+    expect(await screen.findByText(/\[0, 1, 1, 2, 3, 5\]/)).toBeInTheDocument();
+    expect(screen.getByText("python3 /tmp/fib.py")).toBeInTheDocument();
+    expect(screen.getByText("Dosyayi calistir")).toBeInTheDocument();
+  });
+
+  it("names nothing when the job had one action", async () => {
+    vi.mocked(runsApi.get).mockResolvedValue(run({ actionName: "Query" }));
+
+    render(<RunOutcome runRef="run-1" />);
+    await screen.findByText(/SELECT domain/);
+
+    expect(screen.queryByText("Query")).toBeNull();
+  });
+});
+
+/**
+ * The poll used to stop on the first action and miss the output of the second.
+ *
+ * `cat > file` finishes in a moment; the command that runs the file is still going. The
+ * card read the top-level status — the write's — declared the job done and stopped asking.
+ * The output arrived afterwards, to a screen that had stopped looking, and the person saw
+ * a finished run that had printed nothing.
+ */
+describe("a job whose first action finishes before the rest", () => {
+  function twoSteps(second: Partial<RunPayload>) {
+    return run({
+      steps: [
+        run({ actionName: "yaz", status: "succeeded" }),
+        run({ actionRef: "act-2", actionName: "calistir", ...second }),
+      ],
+    });
+  }
+
+  it("keeps waiting while a later action is still running", async () => {
+    vi.mocked(runsApi.get).mockResolvedValue(
+      twoSteps({ status: "running", targets: [] }),
+    );
+
+    render(<RunOutcome runRef="run-1" />);
+
+    expect(
+      await screen.findByText(/çalışıyor|running|bekleniyor|waiting/i),
+    ).toBeInTheDocument();
+  });
+
+  it("reports the job as failed when a later action failed", async () => {
+    /* A script that was written and then would not run is a failure, whatever the write
+       says. Badging it from the first action would claim the opposite. */
+    vi.mocked(runsApi.get).mockResolvedValue(
+      twoSteps({
+        status: "failed",
+        targets: [
+          {
+            address: "192.168.139.110",
+            status: "failed",
+            exitCode: 1,
+            durationMs: 5,
+            stdoutExcerpt: null,
+            stderrExcerpt: "SyntaxError",
+            rows: null,
+          },
+        ],
+      }),
+    );
+
+    render(<RunOutcome runRef="run-1" />);
+
+    expect(await screen.findByText(/başarısız|failed/i)).toBeInTheDocument();
+  });
+});
+

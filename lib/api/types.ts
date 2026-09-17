@@ -236,6 +236,13 @@ export type ConversationTurnPayload = {
   reasoning: string | null;
   problem: string | null;
   statement: string | null;
+  /**
+   * Every command on this card, when it carried more than one.
+   *
+   * Null for the usual single-command turn, and for every turn recorded before a card
+   * could hold several — `statement` still holds the first either way.
+   */
+  statements: string[] | null;
   /** What the model said on its own, when no tool answered. */
   answer: string | null;
   /**
@@ -310,6 +317,14 @@ export type RunPayload = {
     /** A query's rows. Null for a command, which prints to stdout instead. */
     rows: Record<string, unknown>[] | null;
   }[];
+  /**
+   * Every action of this job, when it carried more than one.
+   *
+   * A job approved whole runs its actions under one reference — "write the script" and
+   * "run the script" are one decision. Null for the usual single-action job; the fields
+   * above are the first action either way.
+   */
+  steps: RunPayload[] | null;
 };
 
 export type UserPayload = {

@@ -799,13 +799,11 @@ function Recalled({ turn }: { turn: ConversationTurnPayload }) {
           SQL and moved on will not come back for it. */}
       {turn.warnings && turn.warnings.length > 0 && <Narrowed warnings={turn.warnings} />}
 
-      {turn.statement && (
-        <pre className="mono small bg-body-tertiary border rounded-3 p-2 mb-2 text-body overflow-auto">
-          {turn.statement}
-        </pre>
-      )}
+      <Commands turn={turn} />
 
-      {turn.awaitingApproval && <Approve turnId={turn.id} />}
+      {turn.awaitingApproval && (
+        <Approve turnId={turn.id} count={turn.statements?.length ?? 1} />
+      )}
 
       {turn.runRef && <RunOutcome runRef={turn.runRef} onFinished={onFinished} />}
     </>
@@ -820,7 +818,39 @@ function Recalled({ turn }: { turn: ConversationTurnPayload }) {
  * back to be run. A console that posted the command it was showing would be the one path
  * into the executor that skipped every check.
  */
-function Approve({ turnId }: { turnId: number }) {
+/**
+ * What this turn is about running: one command, or all of them.
+ *
+ * A plan whose commands all resolve from the one sentence is a single decision, and it is
+ * shown whole so the decision can be made once. Numbered, because the order is the order
+ * they run in and "write the file" before "run the file" is the whole of why it works.
+ *
+ * `statements` is null for every turn that showed one command, which is most of them and
+ * all of the ones recorded before a card could hold several — those fall back to
+ * `statement`, which still holds the first either way.
+ */
+function Commands({ turn }: { turn: ConversationTurnPayload }) {
+  const all = turn.statements ?? (turn.statement ? [turn.statement] : []);
+
+  if (all.length === 0) return null;
+
+  return (
+    <>
+      {all.map((command, index) => (
+        <div key={index} className="mb-2">
+          {all.length > 1 && (
+            <div className="small text-body-secondary mb-1">{index + 1}.</div>
+          )}
+          <pre className="mono small bg-body-tertiary border rounded-3 p-2 mb-0 text-body overflow-auto">
+            {command}
+          </pre>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function Approve({ turnId, count }: { turnId: number; count: number }) {
   const t = useT();
   const onFinished = useContext(RunFinished);
   const [busy, setBusy] = useState(false);
@@ -867,7 +897,11 @@ function Approve({ turnId }: { turnId: number }) {
   return (
     <CAlert color="info" className="small mb-0 d-flex align-items-center gap-2 flex-wrap">
       <CIcon icon={cilInfo} className="flex-shrink-0" />
-      <div className="flex-grow-1">{t("console.approve.waiting")}</div>
+      <div className="flex-grow-1">
+        {count > 1
+          ? t("console.approve.waitingAll", { count })
+          : t("console.approve.waiting")}
+      </div>
 
       {/* Both, and the refusal first is not an accident: a row of buttons where only one
           of them does anything is not a question, and the command above is a delete as
@@ -1005,7 +1039,19 @@ function Answer({
 
       {result.plan && <PlanBody plan={result.plan} />}
 
-      {result.dispatch && <Dispatched dispatch={result.dispatch} turnId={turnId} />}
+      {result.dispatch && (
+        <Dispatched
+          dispatch={result.dispatch}
+          turnId={turnId}
+          // How many commands the card is asking about. The plan is right here, so it is
+          // counted rather than sent: what is going to run is what is not set aside.
+          count={
+            result.plan?.actions.filter(
+              (action) => !action.skipped && action.resolved,
+            ).length ?? 1
+          }
+        />
+      )}
     </>
   );
 }
@@ -1227,9 +1273,11 @@ function Dispatch({
 function Dispatched({
   dispatch,
   turnId,
+  count = 1,
 }: {
   dispatch: NonNullable<PromptResultPayload["dispatch"]>;
   turnId?: number;
+  count?: number;
 }) {
   const onFinished = useContext(RunFinished);
 
@@ -1241,7 +1289,7 @@ function Dispatched({
           above first. Offered here as well as on a reopened conversation, so approving
           does not mean reloading the page to find the turn again. */}
       {dispatch.status === "awaiting_approval" && turnId != null && (
-        <Approve turnId={turnId} />
+        <Approve turnId={turnId} count={count} />
       )}
 
       {dispatch.status === "queued" && dispatch.run_id && (

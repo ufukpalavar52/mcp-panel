@@ -94,6 +94,7 @@ export const tr = {
   "console.executeWarning": "İşaretliyse plan kuyruğa yazılır ve gerçekten çalıştırılır.",
   "console.planOnly": "yalnızca plan — hiçbir şey çalıştırılmadı",
   "console.approve.waiting": "Bu adım sizi bekliyor. Henüz hiçbir şey çalışmadı.",
+  "console.approve.waitingAll": "Bu {count} komut sırayla çalıştırılacak. Onaylıyor musun?",
   "console.approve.run": "Onayla ve çalıştır",
   "console.approve.decline": "Vazgeç",
   "console.approve.declined": "Bu adımı reddettiniz. Hiçbir şey çalışmadı.",

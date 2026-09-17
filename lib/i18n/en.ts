@@ -91,6 +91,7 @@ export const en: Record<MessageKey, string> = {
   "console.executeWarning": "When ticked, the plan is queued and actually carried out.",
   "console.planOnly": "plan only — nothing was run",
   "console.approve.waiting": "This step is waiting for you. Nothing has run yet.",
+  "console.approve.waitingAll": "These {count} commands will run in order. Approve them?",
   "console.approve.run": "Approve and run",
   "console.approve.decline": "Cancel",
   "console.approve.declined": "You turned this step down. Nothing was run.",

@@ -50,6 +50,7 @@ function turn(overrides: Partial<ConversationTurnPayload> = {}): ConversationTur
     executed: true,
     status: "planned",
     reasoning: "matched on the table name",
+    statements: null,
     problem: null,
     statement: "SELECT domain, count(*) FROM tblAccounts GROUP BY domain",
     answer: null,
@@ -665,3 +666,45 @@ describe("an answer with no tool behind it", () => {
     expect(await screen.findByText(/hesap sayısını sorguladın/)).toBeInTheDocument();
   });
 });
+
+/**
+ * A plan whose commands all resolve from the one sentence is one card.
+ *
+ * "Write this script to /tmp and run it" is two commands and a single decision. Splitting
+ * it meant a second model call and a second wait for an answer already given, and the
+ * person read the same card twice.
+ */
+describe("a card carrying several commands", () => {
+  beforeEach(() => {
+    window.localStorage.setItem("mcp-panel.console.conversation", "conv_abc");
+  });
+
+  it("shows every command, numbered, in the order they run", async () => {
+    vi.mocked(conversationsApi.get).mockResolvedValue(
+      conversation([
+        turn({
+          statement: "cat > /tmp/f.py <<'E'\nprint(1)\nE",
+          statements: ["cat > /tmp/f.py <<'E'\nprint(1)\nE", "python3 /tmp/f.py"],
+        }),
+      ]),
+    );
+
+    render(<ConsoleView />);
+
+    expect(await screen.findByText(/python3 \/tmp\/f\.py/)).toBeInTheDocument();
+    expect(screen.getByText("1.")).toBeInTheDocument();
+    expect(screen.getByText("2.")).toBeInTheDocument();
+  });
+
+  it("shows a single command without numbering it", async () => {
+    vi.mocked(conversationsApi.get).mockResolvedValue(
+      conversation([turn({ statement: "cat > /tmp/f.py <<'E'\nprint(1)\nE" })]),
+    );
+
+    render(<ConsoleView />);
+
+    expect(await screen.findByText(/cat > \/tmp\/f\.py/)).toBeInTheDocument();
+    expect(screen.queryByText("1.")).toBeNull();
+  });
+});
+

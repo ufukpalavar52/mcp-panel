@@ -30,6 +30,34 @@ function finished(status: RunPayload["status"]): status is Finished {
 }
 
 /**
+ * The outcome of the job as a whole.
+ *
+ * A job is only as good as its worst action: a script that was written and then failed to
+ * run is a failure, and badging it with the write's success would say the opposite of what
+ * happened.
+ */
+function worst(run: RunPayload): Finished {
+  const all = (run.steps ?? [run]).map((step) => step.status).filter(finished);
+
+  return all.find((status) => status !== "succeeded") ?? "succeeded";
+}
+
+/**
+ * Whether the whole job is done, rather than its first action.
+ *
+ * A job approved whole runs several actions under one reference, and the fields at the top
+ * belong to the first of them. `cat > file` finishes in a moment while the command that
+ * runs the file is still going — so reading the top-level status alone declared the job
+ * finished, stopped the poll, and left the screen showing the action that prints nothing.
+ * The output arrived afterwards, to a card that had stopped looking.
+ */
+function settled(run: RunPayload): boolean {
+  return run.steps && run.steps.length > 0
+    ? run.steps.every((step) => finished(step.status))
+    : finished(run.status);
+}
+
+/**
  * What the executor actually did, once it has done it.
  *
  * The console used to end at "queued", which is where the interesting part begins: a
@@ -72,7 +100,7 @@ export default function RunOutcome({
 
         setRun(current);
 
-        if (finished(current.status)) {
+        if (settled(current)) {
           onFinished?.();
           return;
         }
@@ -107,7 +135,7 @@ export default function RunOutcome({
   // Still going. A followed command sends its output on while it runs, so there may
   // already be something to read — and for `tail -f` that is the entire point: waiting for
   // the end means waiting for something that does not come.
-  if (!run || !finished(run.status)) {
+  if (!run || !settled(run)) {
     return (
       <div className="mt-2">
         <div className="small text-body-secondary d-flex align-items-center gap-2">
@@ -115,9 +143,13 @@ export default function RunOutcome({
           {run?.targets.length ? t("console.outcome.streaming") : t("console.outcome.waiting")}
         </div>
 
-        {run?.targets.map((target) => (
-          <TargetResult key={target.address} target={target} />
-        ))}
+        {/* Every action's output, not the first one's: the second is usually the one
+            still running, and the one somebody is watching for. */}
+        {(run?.steps ?? (run ? [run] : [])).flatMap((step) =>
+          step.targets.map((target) => (
+            <TargetResult key={`${step.actionRef}-${target.address}`} target={target} />
+          )),
+        )}
       </div>
     );
   }
@@ -125,7 +157,7 @@ export default function RunOutcome({
   return (
     <div className="mt-2">
       <div className="d-flex align-items-center flex-wrap gap-2 mb-2">
-        <CBadge color={FINISHED[run.status].colour}>{t(FINISHED[run.status].key)}</CBadge>
+        <CBadge color={FINISHED[worst(run)].colour}>{t(FINISHED[worst(run)].key)}</CBadge>
         {run.finishedAt && (
           <span className="small text-body-secondary">
             {new Date(run.finishedAt).toLocaleTimeString()}
@@ -141,16 +173,28 @@ export default function RunOutcome({
 
       {run.error && <div className="small text-danger-emphasis mb-2">{run.error}</div>}
 
-      {/* What was actually sent. The plan above says the same thing, but a run kept in the
-          history is read on its own later, and by then the plan is gone. */}
-      {run.statement && (
-        <pre className="mono small bg-body-tertiary border rounded-3 p-2 mb-2 text-body overflow-auto">
-          {run.statement}
-        </pre>
-      )}
+      {/* One block per action. A job approved whole carries several — "write the script"
+          then "run the script" — and showing only the first showed the one that prints
+          nothing while the output somebody was waiting for sat unread behind it.
 
-      {run.targets.map((target) => (
-        <TargetResult key={target.address} target={target} />
+          What was actually sent is kept beside each result: the plan above says the same
+          thing, but a run read from the history later has no plan next to it. */}
+      {(run.steps ?? [run]).map((step, index) => (
+        <div key={step.actionRef ?? index}>
+          {(run.steps?.length ?? 0) > 1 && step.actionName && (
+            <div className="small text-body-secondary mb-1">{step.actionName}</div>
+          )}
+
+          {step.statement && (
+            <pre className="mono small bg-body-tertiary border rounded-3 p-2 mb-2 text-body overflow-auto">
+              {step.statement}
+            </pre>
+          )}
+
+          {step.targets.map((target) => (
+            <TargetResult key={target.address} target={target} />
+          ))}
+        </div>
       ))}
 
     </div>

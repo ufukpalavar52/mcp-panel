@@ -25,6 +25,7 @@ function run(overrides: Partial<RunPayload> = {}): RunPayload {
     statement: "SELECT count(*) FROM tblAccounts",
     startedAt: "2026-08-31T13:00:00.000Z",
     finishedAt: "2026-08-31T13:00:00.400Z",
+    steps: null,
     targets: [
       {
         address: "127.0.0.1",

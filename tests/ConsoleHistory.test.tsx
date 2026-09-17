@@ -1,4 +1,5 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
+import { inTerminal } from "./terminal";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -110,7 +111,7 @@ describe("ConsoleView history", () => {
     render(<ConsoleView />);
 
     expect(await screen.findByText("en cok hesabi olan 3 domaini ver")).toBeInTheDocument();
-    expect(screen.getByText(/SELECT domain/)).toBeInTheDocument();
+    expect(screen.getByText(inTerminal(/SELECT domain/))).toBeInTheDocument();
     expect(conversationsApi.get).toHaveBeenCalledWith("conv_abc");
   });
 
@@ -126,7 +127,7 @@ describe("ConsoleView history", () => {
 
     render(<ConsoleView />);
 
-    expect(await screen.findByText(/SELECT domain/)).toBeInTheDocument();
+    expect(await screen.findByText(inTerminal(/SELECT domain/))).toBeInTheDocument();
     expect(screen.getByText(/yalnızca plan|plan only/i)).toBeInTheDocument();
   });
 
@@ -153,7 +154,7 @@ describe("ConsoleView history", () => {
 
     render(<ConsoleView />);
 
-    expect(await screen.findByText("systemctl enable --now httpd")).toBeInTheDocument();
+    expect(await screen.findByText(inTerminal(/systemctl enable --now httpd/))).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /onayla|approve/i })).toBeInTheDocument();
     expect(toolsApi.approveStep).not.toHaveBeenCalled();
   });
@@ -247,7 +248,7 @@ describe("ConsoleView history", () => {
     });
 
     render(<ConsoleView />);
-    await screen.findByText(/SELECT domain/);
+    await screen.findByText(inTerminal(/SELECT domain/));
 
     await user.type(screen.getByRole("textbox", { name: /sorunuz|your question/i }), "kac tane hesap var");
     await user.click(screen.getByRole("button", { name: /gönder|send/i }));
@@ -494,7 +495,7 @@ describe("ConsoleView history", () => {
     } as never);
 
     render(<ConsoleView />);
-    await screen.findByText(/SELECT domain/);
+    await screen.findByText(inTerminal(/SELECT domain/));
 
     await new Promise((resume) => setTimeout(resume, 1500));
 
@@ -540,7 +541,7 @@ describe("ConsoleView history", () => {
     render(<ConsoleView />);
 
     expect(
-      await screen.findByText("DELETE http://h/api/users/57", {}, { timeout: 8000 }),
+      await screen.findByText(inTerminal(/DELETE http:\/\/h\/api\/users\/57/), {}, { timeout: 8000 }),
     ).toBeInTheDocument();
   }, 12_000);
 
@@ -691,7 +692,7 @@ describe("a card carrying several commands", () => {
 
     render(<ConsoleView />);
 
-    expect(await screen.findByText(/python3 \/tmp\/f\.py/)).toBeInTheDocument();
+    expect(await screen.findByText(inTerminal(/python3 \/tmp\/f\.py/))).toBeInTheDocument();
     expect(screen.getByText("1.")).toBeInTheDocument();
     expect(screen.getByText("2.")).toBeInTheDocument();
   });
@@ -703,7 +704,7 @@ describe("a card carrying several commands", () => {
 
     render(<ConsoleView />);
 
-    expect(await screen.findByText(/cat > \/tmp\/f\.py/)).toBeInTheDocument();
+    expect(await screen.findByText(inTerminal(/cat > \/tmp\/f\.py/))).toBeInTheDocument();
     expect(screen.queryByText("1.")).toBeNull();
   });
 });

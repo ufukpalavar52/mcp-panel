@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { inTerminal } from "./terminal";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -107,13 +108,13 @@ describe("plan warnings", () => {
     // queries useless; the point is that the reader knows, not that the plan is blocked.
     await ask([{ code: "unrequested_filter", detail: "status = 'active'" }]);
 
-    expect(await screen.findByText(/select count/)).toBeInTheDocument();
+    expect(await screen.findByText(inTerminal(/select count/))).toBeInTheDocument();
   });
 
   it("says nothing when there is nothing to say", async () => {
     await ask([]);
 
-    await screen.findByText(/select count/);
+    await screen.findByText(inTerminal(/select count/));
     expect(screen.queryByText(/narrows on these values|daraltıyor/i)).not.toBeInTheDocument();
   });
 });

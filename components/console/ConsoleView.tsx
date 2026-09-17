@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { Terminal } from "@/components/ui/Terminal";
 import CIcon from "@coreui/icons-react";
 import {
   cilArrowRight,
@@ -841,9 +842,7 @@ function Commands({ turn }: { turn: ConversationTurnPayload }) {
           {all.length > 1 && (
             <div className="small text-body-secondary mb-1">{index + 1}.</div>
           )}
-          <pre className="mono small bg-body-tertiary border rounded-3 p-2 mb-0 text-body overflow-auto">
-            {command}
-          </pre>
+          <Terminal kind="command" className="mb-0">{command}</Terminal>
         </div>
       ))}
     </>
@@ -1117,9 +1116,7 @@ function PlanBody({ plan }: { plan: PlanPayload }) {
                   {action.rejected_reasons.join("; ")}
                 </div>
               ) : (
-                <pre className="mono small bg-body-tertiary border rounded-3 p-2 mb-0 text-body overflow-auto">
-                  {action.resolved}
-                </pre>
+                <Terminal kind="command" className="mb-0">{action.resolved}</Terminal>
               )}
             </>
           )}

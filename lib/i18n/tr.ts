@@ -149,6 +149,8 @@ export const tr = {
   "runs.empty": "Henüz bir çalıştırma yok.",
   "runs.pages": "Çalıştırma sayfaları",
   "runs.noOutput": "Bu çalıştırma bir çıktı bırakmadı.",
+  "runs.exitCode": "çıkış {code}",
+  "runs.stderr": "hata çıktısı",
   "runs.purpose.introspect": "şema okuma",
   "runs.column.started": "Başlangıç",
   "runs.column.tool": "Araç / aksiyon",

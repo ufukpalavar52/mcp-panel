@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Terminal } from "@/components/ui/Terminal";
 import CIcon from "@coreui/icons-react";
 import { cilCheckAlt, cilCopy } from "@coreui/icons";
 import {
+  CBadge,
   CButton,
   CTable,
   CTableBody,
@@ -104,9 +106,7 @@ function RawBody({ body }: { body: string }) {
       <summary className="small text-body-secondary" style={{ cursor: "pointer" }}>
         {t("runs.rawBody")}
       </summary>
-      <pre className="mono small bg-body-tertiary border rounded-3 p-2 mt-1 mb-1 text-body overflow-auto">
-        {body}
-      </pre>
+      <Terminal className="mt-1">{body}</Terminal>
     </details>
   );
 }
@@ -152,13 +152,39 @@ export function CopyResults({ targets }: { targets: Target[] }) {
 /** How long the button admits to having done something. */
 const COPIED_FOR_MS = 2000;
 
+/**
+ * What a command's exit code says, in the one glance somebody gives it.
+ *
+ * Shown at all is the change. A target could come back failed with its code sitting in the
+ * payload and nothing on screen said so — the output was there to be read, and whether the
+ * thing had worked was left to be inferred from it.
+ */
+function ExitCode({ target }: { target: Target }) {
+  const t = useT();
+
+  if (target.exitCode == null) {
+    return null;
+  }
+
+  const ok = target.exitCode === 0;
+
+  return (
+    <CBadge color={ok ? "success" : "danger"} className="mono">
+      {t("runs.exitCode", { code: target.exitCode })}
+    </CBadge>
+  );
+}
+
 export function TargetResult({ target }: { target: Target }) {
+  const t = useT();
+
   return (
     <div className="mb-2">
       {/* Named even when there is one: a fleet command has several, and the same
           component shows both. */}
-      <div className="small text-body-secondary d-flex flex-wrap gap-2">
-        <span className="mono">{target.address}</span>
+      <div className="small text-body-secondary d-flex flex-wrap align-items-center gap-2 mb-1">
+        <span className="mono fw-semibold text-body">{target.address}</span>
+        <ExitCode target={target} />
         {target.durationMs != null && <span>{target.durationMs} ms</span>}
       </div>
 
@@ -179,17 +205,16 @@ export function TargetResult({ target }: { target: Target }) {
           {target.stdoutExcerpt && <RawBody body={target.stdoutExcerpt} />}
         </>
       ) : target.stdoutExcerpt ? (
-        <pre className="mono small bg-body-tertiary border rounded-3 p-2 mt-1 text-body overflow-auto mb-1">
-          {target.stdoutExcerpt}
-        </pre>
+        <Terminal className="mt-1">{target.stdoutExcerpt}</Terminal>
       ) : (
         target.rows && <ResultTable rows={target.rows} />
       )}
 
       {target.stderrExcerpt && (
-        <pre className="mono small bg-danger-subtle border rounded-3 p-2 mt-1 text-body overflow-auto mb-1">
-          {target.stderrExcerpt}
-        </pre>
+        <div className="mt-1">
+          <div className="small text-danger-emphasis mb-1">{t("runs.stderr")}</div>
+          <Terminal kind="error">{target.stderrExcerpt}</Terminal>
+        </div>
       )}
     </div>
   );

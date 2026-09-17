@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { Terminal } from "@/components/ui/Terminal";
 import CIcon from "@coreui/icons-react";
 import {
   cilCheckCircle,
@@ -261,9 +262,7 @@ function ActionCard({ action }: { action: PlannedActionPayload }) {
           </ul>
         </CAlert>
       ) : (
-        <pre className="mono small bg-body-tertiary border rounded-3 p-2 mb-0 text-body overflow-auto">
-          {action.resolved}
-        </pre>
+        <Terminal kind="command" className="mb-0">{action.resolved}</Terminal>
       )}
 
       {action.requires_approval && (

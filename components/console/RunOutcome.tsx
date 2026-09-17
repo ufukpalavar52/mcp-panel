@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Terminal } from "@/components/ui/Terminal";
 import { CBadge, CSpinner } from "@coreui/react";
 import { CopyResults, TargetResult } from "@/components/runs/ResultView";
 import { runsApi } from "@/lib/api/endpoints";
@@ -181,14 +182,23 @@ export default function RunOutcome({
           thing, but a run read from the history later has no plan next to it. */}
       {(run.steps ?? [run]).map((step, index) => (
         <div key={step.actionRef ?? index}>
-          {(run.steps?.length ?? 0) > 1 && step.actionName && (
-            <div className="small text-body-secondary mb-1">{step.actionName}</div>
+          {/* Numbered, because in a job of several the order is the point: the file is
+              written before it is run, and a reader scanning two blocks of output needs to
+              know which came first without reading either. */}
+          {(run.steps?.length ?? 0) > 1 && (
+            <div className="d-flex align-items-center gap-2 mb-1">
+              <CBadge color="secondary" shape="rounded-pill">{index + 1}</CBadge>
+              <span className="small fw-semibold">{step.actionName}</span>
+              {finished(step.status) && (
+                <CBadge color={FINISHED[step.status].colour} shape="rounded-pill">
+                  {t(FINISHED[step.status].key)}
+                </CBadge>
+              )}
+            </div>
           )}
 
           {step.statement && (
-            <pre className="mono small bg-body-tertiary border rounded-3 p-2 mb-2 text-body overflow-auto">
-              {step.statement}
-            </pre>
+            <Terminal kind="command" className="mb-2">{step.statement}</Terminal>
           )}
 
           {step.targets.map((target) => (

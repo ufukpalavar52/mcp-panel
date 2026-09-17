@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import { inTerminal } from "./terminal";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -185,11 +186,13 @@ describe("RunOutcome", () => {
     render(<RunOutcome runRef="run-1" />);
 
     expect(await screen.findByRole("columnheader", { name: "first_name" })).toBeInTheDocument();
-    expect(screen.getByText("102")).toBeInTheDocument();
+    // In the table, specifically. The raw body below it holds the same number, and now
+    // paints it — a bare text match would pass on either and prove neither.
+    expect(screen.getByRole("cell", { name: "102" })).toBeInTheDocument();
 
     // Folded away, not thrown away.
     expect(screen.getByText(/ham yanıt|raw response/i)).toBeInTheDocument();
-    expect(screen.getByText(/"count":1/)).toBeInTheDocument();
+    expect(screen.getByText(inTerminal(/"count":1/))).toBeInTheDocument();
   });
 
   it("offers to copy a finished result", async () => {
@@ -328,8 +331,8 @@ describe("a job with several actions", () => {
 
     render(<RunOutcome runRef="run-1" />);
 
-    expect(await screen.findByText(/\[0, 1, 1, 2, 3, 5\]/)).toBeInTheDocument();
-    expect(screen.getByText("python3 /tmp/fib.py")).toBeInTheDocument();
+    expect(await screen.findByText(inTerminal(/\[0, 1, 1, 2, 3, 5\]/))).toBeInTheDocument();
+    expect(screen.getByText(inTerminal(/python3 \/tmp\/fib\.py/))).toBeInTheDocument();
     expect(screen.getByText("Dosyayi calistir")).toBeInTheDocument();
   });
 
@@ -337,7 +340,7 @@ describe("a job with several actions", () => {
     vi.mocked(runsApi.get).mockResolvedValue(run({ actionName: "Query" }));
 
     render(<RunOutcome runRef="run-1" />);
-    await screen.findByText(/SELECT domain/);
+    await screen.findByText(inTerminal(/SELECT domain/));
 
     expect(screen.queryByText("Query")).toBeNull();
   });
@@ -395,7 +398,10 @@ describe("a job whose first action finishes before the rest", () => {
 
     render(<RunOutcome runRef="run-1" />);
 
-    expect(await screen.findByText(/başarısız|failed/i)).toBeInTheDocument();
+    // Twice over: the job says it failed, and so does the step that failed. Which one it
+    // was matters as much as that one did — in a job of several, "failed" on its own sends
+    // somebody looking through output that is perfectly fine.
+    expect(await screen.findAllByText(/başarısız|failed/i)).toHaveLength(2);
   });
 });
 

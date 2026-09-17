@@ -146,6 +146,8 @@ export const en: Record<MessageKey, string> = {
   "runs.empty": "Nothing has been run yet.",
   "runs.pages": "Run pages",
   "runs.noOutput": "This run left no output.",
+  "runs.exitCode": "exit {code}",
+  "runs.stderr": "stderr",
   "runs.purpose.introspect": "schema read",
   "runs.column.started": "Started",
   "runs.column.tool": "Tool / action",

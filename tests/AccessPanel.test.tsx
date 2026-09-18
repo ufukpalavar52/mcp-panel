@@ -25,6 +25,19 @@ function person(id: number, email: string) {
   };
 }
 
+/**
+ * A grant as the gateway returns one: the address and name come back with it, so a person
+ * already granted can be listed without being in the search results.
+ */
+function granted(userId: number, flags: { canRun: boolean; canEdit: boolean }) {
+  return {
+    userId,
+    email: userId === 1 ? "ayse@example.com" : "mehmet@example.com",
+    fullName: userId === 1 ? "ayse" : "mehmet",
+    ...flags,
+  };
+}
+
 function open(): DefinitionAccessPayload {
   return { access: "OPEN", permissions: [] };
 }
@@ -103,7 +116,7 @@ describe("AccessPanel", () => {
     const user = userEvent.setup();
     vi.mocked(definitionAccessApi.get).mockResolvedValue({
       access: "RESTRICTED",
-      permissions: [{ userId: 1, canRun: true, canEdit: true }],
+      permissions: [granted(1, { canRun: true, canEdit: true })],
     });
 
     render(<AccessPanel definitionId={1} />);
@@ -124,7 +137,7 @@ describe("AccessPanel", () => {
     const user = userEvent.setup();
     vi.mocked(definitionAccessApi.get).mockResolvedValue({
       access: "RESTRICTED",
-      permissions: [{ userId: 1, canRun: true, canEdit: false }],
+      permissions: [granted(1, { canRun: true, canEdit: false })],
     });
 
     render(<AccessPanel definitionId={1} />);
@@ -137,3 +150,86 @@ describe("AccessPanel", () => {
     expect(vi.mocked(definitionAccessApi.replace).mock.calls[0][1].permissions).toEqual([]);
   });
 });
+
+/**
+ * Choosing among many people.
+ *
+ * The list used to draw everybody the first page happened to contain. That is fine with
+ * four accounts and useless with four hundred — the screen exists to find the two or three
+ * who should reach a definition, not to scroll past the rest.
+ */
+describe("AccessPanel with many people", () => {
+  it("asks the server for ten, rather than filtering a page it already truncated", async () => {
+    vi.mocked(definitionAccessApi.get).mockResolvedValue({
+      access: "RESTRICTED",
+      permissions: [],
+    });
+
+    render(<AccessPanel definitionId={1} />);
+    await waitFor(() => expect(usersApi.list).toHaveBeenCalled());
+
+    expect(vi.mocked(usersApi.list).mock.calls[0].slice(0, 2)).toEqual([0, 10]);
+  });
+
+  it("searches on the server", async () => {
+    const user = userEvent.setup();
+    vi.mocked(definitionAccessApi.get).mockResolvedValue({
+      access: "RESTRICTED",
+      permissions: [],
+    });
+
+    render(<AccessPanel definitionId={1} />);
+    await screen.findByText("ayse@example.com");
+
+    await user.type(screen.getByLabelText(/search people|kullanıcı ara/i), "meh");
+
+    await waitFor(() =>
+      expect(vi.mocked(usersApi.list).mock.calls.at(-1)?.[2]).toBe("meh"),
+    );
+  });
+
+  it("keeps somebody already granted in the list whatever the search returns", async () => {
+    /*
+     * Hiding a granted person behind a search would leave an access nobody can see and
+     * therefore nobody can take away — the list would be editing a state it was not
+     * showing.
+     */
+    vi.mocked(definitionAccessApi.get).mockResolvedValue({
+      access: "RESTRICTED",
+      permissions: [granted(1, { canRun: true, canEdit: false })],
+    });
+    vi.mocked(usersApi.list).mockResolvedValue({
+      content: [person(2, "mehmet@example.com")],
+      page: 0,
+      size: 10,
+      totalElements: 1,
+      totalPages: 1,
+      last: true,
+    });
+
+    render(<AccessPanel definitionId={1} />);
+
+    expect(await screen.findByText("mehmet@example.com")).toBeInTheDocument();
+    expect(screen.getByText("ayse@example.com")).toBeInTheDocument();
+  });
+
+  it("says how many more there are rather than just stopping", async () => {
+    vi.mocked(definitionAccessApi.get).mockResolvedValue({
+      access: "RESTRICTED",
+      permissions: [],
+    });
+    vi.mocked(usersApi.list).mockResolvedValue({
+      content: [person(1, "ayse@example.com")],
+      page: 0,
+      size: 10,
+      totalElements: 47,
+      totalPages: 5,
+      last: false,
+    });
+
+    render(<AccessPanel definitionId={1} />);
+
+    expect(await screen.findByText(/46 more|46 kullanıcı daha/)).toBeInTheDocument();
+  });
+});
+

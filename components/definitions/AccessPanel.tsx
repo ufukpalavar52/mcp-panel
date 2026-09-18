@@ -7,6 +7,7 @@ import {
   CCard,
   CCardBody,
   CFormCheck,
+  CFormInput,
   CFormSelect,
   CSpinner,
 } from "@coreui/react";
@@ -17,6 +18,15 @@ import { notify } from "@/lib/ui/toast-store";
 import type { DefinitionAccessPayload, UserPayload } from "@/lib/api/types";
 
 type Grant = DefinitionAccessPayload["permissions"][number];
+
+/**
+ * How many people the search offers at a time.
+ *
+ * Ten because a list of everybody is not a thing anybody reads: the screen exists to find
+ * the two or three people who should reach this definition, not to scroll past the rest.
+ * Anybody already granted is shown as well, however many that is.
+ */
+const SHOWN = 10;
 
 /**
  * Who may reach this definition.
@@ -32,18 +42,18 @@ type Grant = DefinitionAccessPayload["permissions"][number];
 export default function AccessPanel({ definitionId }: { definitionId: number }) {
   const t = useT();
   const [access, setAccess] = useState<DefinitionAccessPayload | null>(null);
-  const [users, setUsers] = useState<UserPayload[]>([]);
+  const [found, setFound] = useState<UserPayload[]>([]);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([definitionAccessApi.get(definitionId), usersApi.list()])
-      .then(([current, people]) => {
-        if (cancelled) return;
-        setAccess(current);
-        setUsers(people.content);
+    definitionAccessApi.get(definitionId)
+      .then((current) => {
+        if (!cancelled) setAccess(current);
       })
       .catch((error: unknown) => {
         if (!cancelled) {
@@ -56,12 +66,58 @@ export default function AccessPanel({ definitionId }: { definitionId: number }) 
     };
   }, [definitionId, t]);
 
+  // Searched on the server and asked for ten. Filtering a page the server already
+  // truncated would search the first hundred accounts and quietly call that the answer —
+  // which fails at exactly the size that makes a search worth having.
+  useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      usersApi.list(0, SHOWN, search)
+        .then((people) => {
+          if (cancelled) return;
+          setFound(people.content);
+          setTotal(people.totalElements);
+        })
+        .catch(() => {
+          if (!cancelled) setFound([]);
+        });
+    }, search ? 250 : 0);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [search]);
+
   const grantFor = useCallback(
     (userId: number): Grant =>
       access?.permissions.find((row) => row.userId === userId)
       ?? { userId, canRun: false, canEdit: false },
     [access],
   );
+
+  /**
+   * Who to draw a row for.
+   *
+   * Everybody already granted, whatever the search says, and then the search results that
+   * are not among them. Hiding a granted person behind a search would leave an access
+   * somebody cannot see and therefore cannot take away — the list would be editing a state
+   * it was not showing.
+   */
+  const rows: Grant[] = access
+    ? [
+        ...access.permissions,
+        ...found
+          .filter((user) => !access.permissions.some((row) => row.userId === user.id))
+          .map((user) => ({
+            userId: user.id,
+            email: user.email,
+            fullName: user.fullName,
+            canRun: false,
+            canEdit: false,
+          })),
+      ]
+    : [];
 
   function change(userId: number, patch: Partial<Grant>) {
     if (!access) return;
@@ -146,6 +202,15 @@ export default function AccessPanel({ definitionId }: { definitionId: number }) 
               </CAlert>
             )}
 
+            <CFormInput
+              type="search"
+              className="mb-2"
+              value={search}
+              placeholder={t("access.searchPlaceholder")}
+              aria-label={t("access.search")}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+
             <div className="table-responsive">
               <table className="table table-sm align-middle mb-0">
                 <thead>
@@ -156,39 +221,50 @@ export default function AccessPanel({ definitionId }: { definitionId: number }) 
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => {
-                    const grant = grantFor(user.id);
-
-                    return (
-                      <tr key={user.id}>
-                        <td>
-                          <div className="small fw-semibold">{user.fullName}</div>
-                          <div className="small text-body-secondary">{user.email}</div>
-                        </td>
-                        <td className="text-center">
-                          <CFormCheck
-                            checked={grant.canRun}
-                            aria-label={`${t("access.canRun")} — ${user.email}`}
-                            onChange={(event) =>
-                              change(user.id, { canRun: event.target.checked })
-                            }
-                          />
-                        </td>
-                        <td className="text-center">
-                          <CFormCheck
-                            checked={grant.canEdit}
-                            aria-label={`${t("access.canEdit")} — ${user.email}`}
-                            onChange={(event) =>
-                              change(user.id, { canEdit: event.target.checked })
-                            }
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {rows.map((row) => (
+                    <tr key={row.userId}>
+                      <td>
+                        <div className="small fw-semibold">{row.fullName}</div>
+                        <div className="small text-body-secondary">{row.email}</div>
+                      </td>
+                      <td className="text-center">
+                        <CFormCheck
+                          checked={row.canRun}
+                          aria-label={`${t("access.canRun")} — ${row.email}`}
+                          onChange={(event) =>
+                            change(row.userId, {
+                              canRun: event.target.checked,
+                              email: row.email,
+                              fullName: row.fullName,
+                            })
+                          }
+                        />
+                      </td>
+                      <td className="text-center">
+                        <CFormCheck
+                          checked={row.canEdit}
+                          aria-label={`${t("access.canEdit")} — ${row.email}`}
+                          onChange={(event) =>
+                            change(row.userId, {
+                              canEdit: event.target.checked,
+                              email: row.email,
+                              fullName: row.fullName,
+                            })
+                          }
+                        />
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
+
+            {total > found.length && (
+              // Said rather than left to be inferred from a list that simply stops.
+              <p className="small text-body-secondary mt-2 mb-0">
+                {t("access.more", { count: total - found.length })}
+              </p>
+            )}
           </>
         )}
 

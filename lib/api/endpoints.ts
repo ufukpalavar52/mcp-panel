@@ -254,8 +254,8 @@ export const runsApi = {
 /* --------------------------------- users --------------------------------- */
 
 export const usersApi = {
-  list: (page = 0, size = 100) =>
-    api.get<PageResponse<UserPayload>>("/api/v1/users", { page, size }),
+  list: (page = 0, size = 100, search?: string) =>
+    api.get<PageResponse<UserPayload>>("/api/v1/users", { page, size, search }),
   update: (id: number, body: unknown) => api.put<UserPayload>(`/api/v1/users/${id}`, body),
   suspend: (id: number) => api.post<UserPayload>(`/api/v1/users/${id}/suspend`),
   invite: (body: unknown) => api.post<InvitationPayload>("/api/v1/users/invitations", body),

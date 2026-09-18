@@ -148,7 +148,13 @@ export default function RunOutcome({
             still running, and the one somebody is watching for. */}
         {(run?.steps ?? (run ? [run] : [])).flatMap((step) =>
           step.targets.map((target) => (
-            <TargetResult key={`${step.actionRef}-${target.address}`} target={target} />
+            // Followed only while it is still running. A finished command's output is a
+            // thing to read from the top, and a pane that scrolls itself is in the way.
+            <TargetResult
+              key={`${step.actionRef}-${target.address}`}
+              target={target}
+              follow
+            />
           )),
         )}
       </div>

@@ -262,6 +262,15 @@ export type ConversationTurnPayload = {
    * run behind it", and a copy of that rule in the browser is the one that drifts.
    */
   awaitingApproval: boolean;
+  /**
+   * What was asked, for a step the goal loop wrote. Null for a turn somebody typed.
+   *
+   * A conversation can hold more than one goal at once: leave a step unapproved, ask for
+   * something else, come back and approve it, and the first goal carries on from where it
+   * stopped. Without this a card says only "approve this command" and gives no way to tell
+   * which of two requests it belongs to.
+   */
+  goalPrompt: string | null;
   createdAt: string;
 };
 

@@ -175,7 +175,14 @@ function ExitCode({ target }: { target: Target }) {
   );
 }
 
-export function TargetResult({ target }: { target: Target }) {
+export function TargetResult({
+  target,
+  follow = false,
+}: {
+  target: Target;
+  /** Still running: keep the newest line in view as output arrives. */
+  follow?: boolean;
+}) {
   const t = useT();
 
   return (
@@ -205,7 +212,7 @@ export function TargetResult({ target }: { target: Target }) {
           {target.stdoutExcerpt && <RawBody body={target.stdoutExcerpt} />}
         </>
       ) : target.stdoutExcerpt ? (
-        <Terminal className="mt-1">{target.stdoutExcerpt}</Terminal>
+        <Terminal className="mt-1" follow={follow}>{target.stdoutExcerpt}</Terminal>
       ) : (
         target.rows && <ResultTable rows={target.rows} />
       )}

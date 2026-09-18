@@ -96,6 +96,7 @@ export const en: Record<MessageKey, string> = {
   "console.approve.decline": "Cancel",
   "console.approve.declined": "You turned this step down. Nothing was run.",
   "console.continuing": "Working on the next step\u2026",
+  "console.forGoal": "Continuing: “{goal}”",
   "console.warn.firstOnly": "Only the first command was run. This was left for the next step:",
   "console.warn.firstOnlyHint": "The model wrote two commands at once. The rest is proposed as a separate step once this one has finished.",
   "console.warnings": "The query narrows on these values:",

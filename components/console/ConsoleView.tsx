@@ -794,6 +794,19 @@ function Recalled({ turn }: { turn: ConversationTurnPayload }) {
         )}
       </div>
 
+      {/* Which request this step serves.
+          
+          A conversation holds more than one goal at a time more often than it looks: leave
+          a step unapproved, ask for something else, come back and approve it, and the first
+          goal carries on from where it stopped — sometimes many minutes later, after the
+          second request has come and gone. A card that says only "approve this command"
+          then reads as the console going back to something already finished. */}
+      {turn.goalPrompt && (
+        <p className="small text-body-secondary mb-1">
+          {t("console.forGoal", { goal: turn.goalPrompt })}
+        </p>
+      )}
+
       {turn.reasoning && <p className="small text-body-secondary">{turn.reasoning}</p>}
 
       {/* Above the statement, as in the live console: somebody who has already read the

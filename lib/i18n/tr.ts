@@ -99,6 +99,7 @@ export const tr = {
   "console.approve.decline": "Vazgeç",
   "console.approve.declined": "Bu adımı reddettiniz. Hiçbir şey çalışmadı.",
   "console.continuing": "Sonraki adım hazırlanıyor\u2026",
+  "console.forGoal": "Şu isteğin devamı: “{goal}”",
   "console.warn.firstOnly": "Yalnızca ilk komut çalıştırıldı. Bunu sonraki adıma bıraktı:",
   "console.warn.firstOnlyHint": "Model iki komutu bir arada yazdı. Kalanı, bu adım bittikten sonra ayrı bir adım olarak önerilir.",
   "console.warnings": "Sorgu şu değerlere göre daraltıyor:",

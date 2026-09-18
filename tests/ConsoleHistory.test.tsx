@@ -52,6 +52,7 @@ function turn(overrides: Partial<ConversationTurnPayload> = {}): ConversationTur
     status: "planned",
     reasoning: "matched on the table name",
     statements: null,
+    goalPrompt: null,
     problem: null,
     statement: "SELECT domain, count(*) FROM tblAccounts GROUP BY domain",
     answer: null,
@@ -706,6 +707,51 @@ describe("a card carrying several commands", () => {
 
     expect(await screen.findByText(inTerminal(/cat > \/tmp\/f\.py/))).toBeInTheDocument();
     expect(screen.queryByText("1.")).toBeNull();
+  });
+});
+
+/**
+ * Which request a step belongs to.
+ *
+ * A conversation holds more than one goal at a time more often than it looks: leave a step
+ * unapproved, ask for something else, come back and approve it, and the first goal carries
+ * on from where it stopped — sometimes many minutes later, after the second request has
+ * come and gone.
+ *
+ * A card saying only "approve this command" then reads as the console going back to
+ * something already finished, when it is in fact continuing something that was never done.
+ */
+describe("a step of a goal", () => {
+  beforeEach(() => {
+    window.localStorage.setItem("mcp-panel.console.conversation", "conv_abc");
+  });
+
+  it("says what it is continuing", async () => {
+    vi.mocked(conversationsApi.get).mockResolvedValue(
+      conversation([
+        turn({
+          statement: "lspci | grep -i vga",
+          goalPrompt: "sunucu islemci, ram ve ekran karti ozelliklerini yaz",
+        }),
+      ]),
+    );
+
+    render(<ConsoleView />);
+
+    expect(
+      await screen.findByText(/sunucu islemci, ram ve ekran karti/),
+    ).toBeInTheDocument();
+  });
+
+  it("says nothing of the sort for a turn somebody typed", async () => {
+    vi.mocked(conversationsApi.get).mockResolvedValue(
+      conversation([turn({ statement: "uptime", goalPrompt: null })]),
+    );
+
+    render(<ConsoleView />);
+    await screen.findByText(inTerminal(/uptime/));
+
+    expect(screen.queryByText(/continuing|devamı/i)).toBeNull();
   });
 });
 

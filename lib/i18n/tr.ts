@@ -119,6 +119,8 @@ export const tr = {
   "console.outcome.waiting": "Sonuç bekleniyor…",
   "console.outcome.streaming": "Çalışıyor — şu ana kadarki çıktı",
   "console.outcome.slow": "Sonuç hâlâ gelmedi; çalıştırmalar ekranından takip edebilirsin.",
+  "console.outcome.stalled":
+    "İş kuyrukta bekliyor; şu an dinleyen bir yürütücü yok. Yürütücü döndüğünde çalışacak.",
   "console.outcome.succeeded": "Başarılı",
   "console.outcome.failed": "Başarısız",
   "console.outcome.cancelled": "İptal edildi",

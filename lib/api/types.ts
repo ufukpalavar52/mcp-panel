@@ -334,6 +334,15 @@ export type RunPayload = {
    * above are the first action either way.
    */
   steps: RunPayload[] | null;
+  /**
+   * Nothing is going to finish this run: it is still running, has been for longer than a
+   * dispatch takes, and no executor is consuming the job queue.
+   *
+   * Not folded into `status`, which stays `running` — the gateway observed no outcome and
+   * will not invent one. False whenever the broker could not be asked, so this never
+   * accuses anybody out of uncertainty.
+   */
+  stalled: boolean;
 };
 
 export type UserPayload = {

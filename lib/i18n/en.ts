@@ -116,6 +116,8 @@ export const en: Record<MessageKey, string> = {
   "console.outcome.waiting": "Waiting for the result…",
   "console.outcome.streaming": "Running — output so far",
   "console.outcome.slow": "No result yet; follow it on the runs screen.",
+  "console.outcome.stalled":
+    "This job is queued with no executor listening. It will run when one comes back.",
   "console.outcome.succeeded": "Succeeded",
   "console.outcome.failed": "Failed",
   "console.outcome.cancelled": "Cancelled",

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Terminal } from "@/components/ui/Terminal";
 import { CBadge, CSpinner } from "@coreui/react";
+import CIcon from "@coreui/icons-react";
+import { cilWarning } from "@coreui/icons";
 import { CopyResults, TargetResult } from "@/components/runs/ResultView";
 import { runsApi } from "@/lib/api/endpoints";
 import { useT } from "@/lib/i18n";
@@ -139,10 +141,21 @@ export default function RunOutcome({
   if (!run || !settled(run)) {
     return (
       <div className="mt-2">
-        <div className="small text-body-secondary d-flex align-items-center gap-2">
-          <CSpinner size="sm" />
-          {run?.targets.length ? t("console.outcome.streaming") : t("console.outcome.waiting")}
-        </div>
+        {run?.stalled ? (
+          // No spinner. A spinner says something is happening, and the whole point of this
+          // branch is that nothing is: the job is on the broker with nobody consuming it,
+          // and it will sit there until an executor comes back. Saying "waiting for the
+          // result" was true for thirty-seven hours once, and told the reader nothing.
+          <div className="small text-warning-emphasis d-flex align-items-center gap-2">
+            <CIcon icon={cilWarning} />
+            {t("console.outcome.stalled")}
+          </div>
+        ) : (
+          <div className="small text-body-secondary d-flex align-items-center gap-2">
+            <CSpinner size="sm" />
+            {run?.targets.length ? t("console.outcome.streaming") : t("console.outcome.waiting")}
+          </div>
+        )}
 
         {/* Every action's output, not the first one's: the second is usually the one
             still running, and the one somebody is watching for. */}

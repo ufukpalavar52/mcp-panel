@@ -28,6 +28,7 @@ function run(overrides: Partial<RunPayload> = {}): RunPayload {
     startedAt: "2026-08-31T13:00:00Z",
     finishedAt: "2026-08-31T13:00:01Z",
     steps: null,
+    stalled: false,
     targets: [
       {
         address: "127.0.0.1",
@@ -403,5 +404,41 @@ describe("a job whose first action finishes before the rest", () => {
     // somebody looking through output that is perfectly fine.
     expect(await screen.findAllByText(/başarısız|failed/i)).toHaveLength(2);
   });
-});
+  /**
+   * A run nobody is going to finish.
+   *
+   * An executor that fell back to the wrong broker address once left a job on the queue
+   * for thirty-seven hours. The card said "waiting for the result" the whole time — true,
+   * and the reason finding it took reading container logs.
+   */
+  it("says nobody is listening rather than spinning forever", async () => {
+    asked.mockResolvedValue(
+      run({ status: "running", finishedAt: null, targets: [], stalled: true }),
+    );
 
+    render(<RunOutcome runRef="run-1" />);
+
+    expect(
+      await screen.findByText(/dinleyen bir yürütücü yok|no executor listening/i),
+    ).toBeInTheDocument();
+
+    // And not the innocuous line beside it: a spinner and "waiting for the result" say
+    // something is happening, which is exactly what is not.
+    expect(screen.queryByText(/sonuç bekleniyor|waiting for the result/i)).toBeNull();
+  });
+
+  it("keeps waiting quietly while an executor is there", async () => {
+    // The case that must not warn: a command that has printed nothing yet, on a healthy
+    // executor. Warning here would teach the reader to ignore the warning.
+    asked.mockResolvedValue(
+      run({ status: "running", finishedAt: null, targets: [], stalled: false }),
+    );
+
+    render(<RunOutcome runRef="run-1" />);
+
+    expect(
+      await screen.findByText(/sonuç bekleniyor|waiting for the result/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/dinleyen bir yürütücü yok|no executor listening/i)).toBeNull();
+  });
+});

@@ -253,7 +253,13 @@ function PlanReport({ result }: { result: ExecutionResultPayload }) {
       )}
 
       {plan.actions.map((action) => (
-        <ActionCard key={action.action_id} action={action} />
+        <ActionCard
+          key={action.action_id}
+          action={action}
+          // Whether this plan is still waiting, not whether the action has the box
+          // ticked. Those are different facts and only one of them is news.
+          waiting={awaiting(result)}
+        />
       ))}
 
       <div className="small text-body-secondary d-flex align-items-start gap-2 mt-3">
@@ -273,7 +279,13 @@ function PlanReport({ result }: { result: ExecutionResultPayload }) {
   );
 }
 
-function ActionCard({ action }: { action: PlannedActionPayload }) {
+function ActionCard({
+  action,
+  waiting,
+}: {
+  action: PlannedActionPayload;
+  waiting: boolean;
+}) {
   const t = useT();
   const rejected = action.rejected_reasons.length > 0;
 
@@ -315,7 +327,11 @@ function ActionCard({ action }: { action: PlannedActionPayload }) {
         <Terminal kind="command" className="mb-0">{action.resolved}</Terminal>
       )}
 
-      {action.requires_approval && (
+      {/* Only while it is actually waiting. `requires_approval` is a property of the
+          action and stays true after the command has been approved and dispatched, so
+          showing it on that alone left the warning up next to a command that had just
+          run — which reads as the approval having failed. */}
+      {action.requires_approval && waiting && (
         <div className="small text-warning-emphasis mt-2">
           <CIcon icon={cilWarning} size="sm" className="me-1" />
           {t("tools.run.needsApproval")}

@@ -192,6 +192,30 @@ describe("ToolRunModal file loading", () => {
       expect(asked.mock.calls[1][2]).toEqual(["tail -f /var/log/messages"]);
     });
 
+    it("drops the warning once the command has been approved and run", async () => {
+      // requires_approval stays true on the action after it has been dispatched -- it is
+      // a property of the action, not a state of this run. Showing the warning on that
+      // alone left "This action requires approval" next to a command that had just run,
+      // which reads as the approval having failed.
+      const asked = vi.mocked(toolsApi.execute);
+      asked.mockReset();
+      asked.mockResolvedValueOnce(plan("tail -f /var/log/messages") as never);
+      asked.mockResolvedValueOnce({
+        ...plan("tail -f /var/log/messages"),
+        dispatch: { status: "queued", reason: "Published", run_id: "r1", action_run_ids: {} },
+      } as never);
+
+      const user = userEvent.setup();
+      render(<ToolRunModal tool={tool({})} onClose={() => {}} />);
+
+      await user.click(screen.getByRole("button", { name: /aracı çalıştır|run the tool/i }));
+      expect(screen.getByText(/onay gerektiriyor|requires approval/i)).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: /onayla|approve/i }));
+
+      expect(screen.queryByText(/onay gerektiriyor|requires approval/i)).toBeNull();
+    });
+
     it("offers nothing to approve when nothing is waiting", async () => {
       const asked = vi.mocked(toolsApi.execute);
       asked.mockReset();

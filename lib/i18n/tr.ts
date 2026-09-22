@@ -635,7 +635,7 @@ export const tr = {
   "tools.run.approve": "Onayla ve çalıştır",
   "tools.run.unavailable": "Araç devre dışı veya modeli seçilmemiş — MCP sunucusu bunu yayınlamıyor.",
   "tools.run.planOnly":
-    "Bu ekran aracı hedeflerine karşı gerçekten çalıştırır. Onay gerektiren bir aksiyon planlanır ama gönderilmez — onları konsoldan onayla.",
+    "Bu ekran aracı hedeflerine karşı gerçekten çalıştırır. Onay gerektiren bir aksiyon planda durur — komutu okuyup aşağıdan onaylayabilirsin.",
   "tools.run.noInputs": "Bu aracın parametresi yok — doğrudan çalıştırabilirsin.",
   "tools.run.missing": "Zorunlu alan(lar) boş: {fields}",
   "tools.run.attach": "Dosyadan yükle",

@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { Terminal } from "@/components/ui/Terminal";
+import RunOutcome from "@/components/console/RunOutcome";
 import CIcon from "@coreui/icons-react";
 import {
   cilCheckCircle,
@@ -269,6 +270,13 @@ function PlanReport({ result }: { result: ExecutionResultPayload }) {
         />
         <div>{dispatch.reason}</div>
       </div>
+
+      {/* What it actually did. The screen used to stop at "published to the executor
+          queue" — true, and the end of the story as far as anybody reading it could
+          tell. The console has polled for the outcome since runs existed; this is the
+          same component, so the output looks the same in both places and there is one
+          piece of code deciding what a finished run looks like. */}
+      {dispatch.run_id && <RunOutcome runRef={dispatch.run_id} />}
 
       {plan.masked_inputs.length > 0 && (
         <div className="small text-body-secondary mt-2">

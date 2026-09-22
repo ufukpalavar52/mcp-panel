@@ -4,10 +4,13 @@ import { describe, expect, it, vi } from "vitest";
 
 import ToolRunModal from "@/components/tools/ToolRunModal";
 import type { ToolPayload } from "@/lib/api/types";
-import { toolsApi } from "@/lib/api/endpoints";
+import { runsApi, toolsApi } from "@/lib/api/endpoints";
 
 vi.mock("@/lib/api/endpoints", () => ({
   toolsApi: { execute: vi.fn() },
+  // The outcome panel polls for the run. Never resolving keeps it on its waiting state,
+  // which is all these tests need from it.
+  runsApi: { get: vi.fn(() => new Promise(() => {})) },
 }));
 
 function tool(properties: Record<string, unknown>, required: string[] = []): ToolPayload {
@@ -214,6 +217,25 @@ describe("ToolRunModal file loading", () => {
       await user.click(screen.getByRole("button", { name: /onayla|approve/i }));
 
       expect(screen.queryByText(/onay gerektiriyor|requires approval/i)).toBeNull();
+    });
+
+    it("shows the run's outcome once something was dispatched", async () => {
+      // The screen used to stop at "published to the executor queue", which is where the
+      // interesting part begins: the command ran for two minutes and its output went
+      // nowhere anybody could see.
+      const asked = vi.mocked(toolsApi.execute);
+      asked.mockReset();
+      asked.mockResolvedValue({
+        ...plan("uptime"),
+        dispatch: { status: "queued", reason: "Published", run_id: "r1", action_run_ids: {} },
+      } as never);
+
+      const user = userEvent.setup();
+      render(<ToolRunModal tool={tool({})} onClose={() => {}} />);
+
+      await user.click(screen.getByRole("button", { name: /aracı çalıştır|run the tool/i }));
+
+      expect(vi.mocked(runsApi.get)).toHaveBeenCalledWith("r1");
     });
 
     it("offers nothing to approve when nothing is waiting", async () => {

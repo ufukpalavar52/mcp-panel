@@ -6,7 +6,6 @@ import CIcon from "@coreui/icons-react";
 import {
   cilCheckCircle,
   cilMediaPlay,
-  cilShieldAlt,
   cilWarning,
   cilXCircle,
 } from "@coreui/icons";
@@ -117,8 +116,12 @@ export default function ToolRunModal({
         </CModalHeader>
 
         <CModalBody>
-          <CAlert color="info" className="d-flex align-items-start gap-2 small">
-            <CIcon icon={cilShieldAlt} className="mt-1 flex-shrink-0" />
+          {/* Warning rather than info, and a warning mark rather than a shield. The
+              banner used to promise that nothing ran, in blue, under a shield — and the
+              promise stopped being true when an executor shipped. A screen that runs
+              commands on live hosts should not open with the colour of reassurance. */}
+          <CAlert color="warning" className="d-flex align-items-start gap-2 small">
+            <CIcon icon={cilWarning} className="mt-1 flex-shrink-0" />
             <div>{t("tools.run.planOnly")}</div>
           </CAlert>
 

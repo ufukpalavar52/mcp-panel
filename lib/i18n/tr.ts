@@ -631,9 +631,10 @@ export const tr = {
   "tools.noModel": "model seçilmemiş",
   "tools.empty": "Henüz araç yok — bir tanım oluşturduğunda burada görünür.",
   "tools.run.open": "Çalıştır",
-  "tools.run.submit": "Planı oluştur",
+  "tools.run.submit": "Aracı çalıştır",
   "tools.run.unavailable": "Araç devre dışı veya modeli seçilmemiş — MCP sunucusu bunu yayınlamıyor.",
-  "tools.run.planOnly": "Hiçbir şey çalıştırılmaz. MCP sunucusu yalnızca ne yapılacağına karar verir; komutu gerçekten koşacak yürütücü henüz yok.",
+  "tools.run.planOnly":
+    "Bu ekran aracı hedeflerine karşı gerçekten çalıştırır. Onay gerektiren bir aksiyon planlanır ama gönderilmez — onları konsoldan onayla.",
   "tools.run.noInputs": "Bu aracın parametresi yok — doğrudan çalıştırabilirsin.",
   "tools.run.missing": "Zorunlu alan(lar) boş: {fields}",
   "tools.run.attach": "Dosyadan yükle",

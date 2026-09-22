@@ -632,6 +632,7 @@ export const tr = {
   "tools.empty": "Henüz araç yok — bir tanım oluşturduğunda burada görünür.",
   "tools.run.open": "Çalıştır",
   "tools.run.submit": "Aracı çalıştır",
+  "tools.run.approve": "Onayla ve çalıştır",
   "tools.run.unavailable": "Araç devre dışı veya modeli seçilmemiş — MCP sunucusu bunu yayınlamıyor.",
   "tools.run.planOnly":
     "Bu ekran aracı hedeflerine karşı gerçekten çalıştırır. Onay gerektiren bir aksiyon planlanır ama gönderilmez — onları konsoldan onayla.",

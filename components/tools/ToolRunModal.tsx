@@ -81,8 +81,15 @@ export default function ToolRunModal({
     (field) => field.required && isBlank(values[field.key]),
   );
 
-  const handleRun = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  /**
+   * Runs the tool, carrying an approval when this is one.
+   *
+   * `approved` is the commands the plan on screen resolved to. Sending them back is what
+   * says yes to those and nothing else: the MCP server compares them with what the fresh
+   * plan plans to run and refuses the pair when they differ, so an approval cannot be
+   * carried over to a command nobody read.
+   */
+  const run = async (approved?: string[]) => {
     if (!tool || missing.length > 0) return;
 
     setRunning(true);
@@ -90,7 +97,7 @@ export default function ToolRunModal({
     setResult(null);
 
     try {
-      setResult(await toolsApi.execute(tool.name, submittable(fields, values)));
+      setResult(await toolsApi.execute(tool.name, submittable(fields, values), approved));
     } catch (error) {
       // A transport failure is not a plan. Showing it as one would let "the MCP server
       // is unreachable" read like "the command was refused", which is the opposite
@@ -103,6 +110,13 @@ export default function ToolRunModal({
     } finally {
       setRunning(false);
     }
+  };
+
+  const handleRun = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    // A first ask carries no approval. There is nothing to approve until a plan exists,
+    // and a command nobody has read is not one anybody has agreed to.
+    void run();
   };
 
   return (
@@ -166,6 +180,21 @@ export default function ToolRunModal({
           <CButton color="secondary" variant="outline" onClick={onClose}>
             {t("common.close")}
           </CButton>
+
+          {/* Only while a plan is sitting there waiting for a yes. The commands it
+              resolved to are what gets sent back, so the approval is of what is on the
+              screen and cannot be carried to a command nobody read. */}
+          {awaiting(result) && (
+            <CButton
+              color="warning"
+              disabled={running}
+              onClick={() => void run(commandsOf(result))}
+            >
+              <CIcon icon={cilCheckCircle} className="me-2" />
+              {t("tools.run.approve")}
+            </CButton>
+          )}
+
           <CButton color="primary" type="submit" disabled={running}>
             {running ? (
               <CSpinner size="sm" className="me-2" />
@@ -178,6 +207,24 @@ export default function ToolRunModal({
       </CForm>
     </CModal>
   );
+}
+
+/** Whether a plan is sitting there waiting for somebody to say yes. */
+function awaiting(result: ExecutionResultPayload | null): boolean {
+  return result?.dispatch.status === "awaiting_approval";
+}
+
+/**
+ * The commands a plan would actually run.
+ *
+ * Skipped actions are left out: they resolve to nothing, because there was no point
+ * resolving what is not going to run, and including them would make every approval of a
+ * multi-action definition fail the comparison at the other end.
+ */
+function commandsOf(result: ExecutionResultPayload | null): string[] {
+  return (result?.plan.actions ?? [])
+    .filter((action) => !action.skipped)
+    .map((action) => action.resolved);
 }
 
 /** The resolved plan, action by action. */

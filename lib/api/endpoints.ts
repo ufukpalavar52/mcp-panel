@@ -149,15 +149,31 @@ export const toolsApi = {
     api.get<ToolPayload[]>("/api/v1/tools", { published: publishedOnly }),
 
   /**
-   * Asks what a tool call resolves to. Nothing runs.
+   * Runs a tool, unless one of its actions needs somebody to say yes first.
    *
-   * The gateway forwards this to the MCP server, which decides; the answer is a plan
-   * describing what *would* happen, and no executor exists to carry it out yet.
+   * The gateway forwards this to the MCP server, which plans and — for anything not held
+   * for approval — dispatches. An action marked as needing approval comes back planned
+   * with `dispatch.status === "awaiting_approval"` and nothing running.
+   *
+   * Approving it is this same call again with `expect` set to the command that was on the
+   * screen. Approval is of a command rather than of an intention: planning is not
+   * deterministic, so the gateway compares what was agreed to with what is about to run
+   * and refuses the pair when they differ.
    */
-  execute: (toolName: string, args: Record<string, unknown>) =>
+  execute: (
+    toolName: string,
+    args: Record<string, unknown>,
+    approved?: string[],
+  ) =>
     api.post<ExecutionResultPayload>(
       `/api/v1/tools/${encodeURIComponent(toolName)}/execute`,
-      args,
+      {
+        arguments: args,
+        // Both forms, because a plan can show one command or several and the singular is
+        // what the prompt path has always sent. Omitted entirely on a first ask.
+        ...(approved?.length === 1 ? { expect: approved[0] } : {}),
+        ...(approved && approved.length > 1 ? { expectAll: approved } : {}),
+      },
     ),
 
   /**

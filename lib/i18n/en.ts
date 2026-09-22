@@ -625,6 +625,7 @@ export const en: Record<MessageKey, string> = {
   "tools.empty": "No tools yet — create a definition and it shows up here.",
   "tools.run.open": "Run",
   "tools.run.submit": "Run the tool",
+  "tools.run.approve": "Approve and run",
   "tools.run.unavailable": "Disabled, or no model selected — the MCP server does not publish this tool.",
   "tools.run.planOnly":
     "This runs the tool for real, against its targets. An action marked as needing approval is planned but not dispatched — approve those from the console.",

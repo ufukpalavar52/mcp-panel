@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import ToolRunModal from "@/components/tools/ToolRunModal";
 import type { ToolPayload } from "@/lib/api/types";
+import { toolsApi } from "@/lib/api/endpoints";
 
 vi.mock("@/lib/api/endpoints", () => ({
   toolsApi: { execute: vi.fn() },
@@ -132,5 +133,79 @@ describe("ToolRunModal file loading", () => {
 
     expect(screen.queryByText(/deploy\.sh/)).toBeNull();
     expect(screen.getByLabelText("content")).toHaveValue("set -eux");
+  });
+  /**
+   * Approval, in the screen that asked.
+   *
+   * The box was rendered here and enforced nowhere — three clicks once ran `tail -f` on a
+   * live host with no approver recorded. It is enforced now, and the cost of enforcing it
+   * was a trip to the console until this button existed.
+   */
+  describe("approval", () => {
+    const plan = (resolved: string) => ({
+      status: "planned",
+      plan: {
+        status: "planned",
+        model: "m",
+        problems: [],
+        masked_inputs: [],
+        actions: [{
+          action_id: 1,
+          name: "Logu izle",
+          kind: "ssh",
+          mode: "dynamic",
+          targets: ["rocky"],
+          resolved,
+          authored_by_model: true,
+          rejected_reasons: [],
+          requires_approval: true,
+          skipped: false,
+          skip_reason: "",
+        }],
+      },
+      dispatch: {
+        status: "awaiting_approval",
+        reason: "This action needs approval before it runs.",
+        run_id: null,
+        action_run_ids: {},
+      },
+    });
+
+    it("sends the command that was on the screen back as the approval", async () => {
+      const asked = vi.mocked(toolsApi.execute);
+      asked.mockReset();
+      asked.mockResolvedValue(plan("tail -f /var/log/messages") as never);
+
+      const user = userEvent.setup();
+      render(<ToolRunModal tool={tool({})} onClose={() => {}} />);
+
+      await user.click(screen.getByRole("button", { name: /aracı çalıştır|run the tool/i }));
+
+      // The first ask carries no approval: there is nothing to approve until a plan
+      // exists, and a command nobody has read is not one anybody has agreed to.
+      expect(asked.mock.calls[0][2]).toBeUndefined();
+
+      await user.click(screen.getByRole("button", { name: /onayla|approve/i }));
+
+      // The second carries exactly what was drawn, which is what the MCP server compares
+      // against the fresh plan before it dispatches anything.
+      expect(asked.mock.calls[1][2]).toEqual(["tail -f /var/log/messages"]);
+    });
+
+    it("offers nothing to approve when nothing is waiting", async () => {
+      const asked = vi.mocked(toolsApi.execute);
+      asked.mockReset();
+      asked.mockResolvedValue({
+        ...plan("uptime"),
+        dispatch: { status: "queued", reason: "Published", run_id: "r1", action_run_ids: {} },
+      } as never);
+
+      const user = userEvent.setup();
+      render(<ToolRunModal tool={tool({})} onClose={() => {}} />);
+
+      await user.click(screen.getByRole("button", { name: /aracı çalıştır|run the tool/i }));
+
+      expect(screen.queryByRole("button", { name: /onayla|approve/i })).toBeNull();
+    });
   });
 });

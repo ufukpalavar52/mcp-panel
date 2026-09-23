@@ -164,11 +164,16 @@ export const toolsApi = {
     toolName: string,
     args: Record<string, unknown>,
     approved?: string[],
+    actionId?: number,
   ) =>
     api.post<ExecutionResultPayload>(
       `/api/v1/tools/${encodeURIComponent(toolName)}/execute`,
       {
         arguments: args,
+        // Which action, for a definition that has more than one. Omitted otherwise: a
+        // tool with a single action has no choice to make, and sending one anyway would
+        // put an id on the wire that means nothing.
+        ...(actionId === undefined ? {} : { actionId }),
         // Both forms, because a plan can show one command or several and the singular is
         // what the prompt path has always sent. Omitted entirely on a first ask.
         ...(approved?.length === 1 ? { expect: approved[0] } : {}),

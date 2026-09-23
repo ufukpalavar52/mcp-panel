@@ -626,6 +626,9 @@ export const en: Record<MessageKey, string> = {
   "tools.run.open": "Run",
   "tools.run.submit": "Run the tool",
   "tools.run.approve": "Approve and run",
+  "tools.run.action": "Action",
+  "tools.run.actionHint":
+    "This tool has several actions. Which one a request needs is normally decided from a sentence, and this screen has none — so choose it here.",
   "tools.run.unavailable": "Disabled, or no model selected — the MCP server does not publish this tool.",
   "tools.run.planOnly":
     "This runs the tool for real, against its targets. An action marked as needing approval stops at the plan — read the command and approve it below.",

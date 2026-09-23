@@ -4,10 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 
 import ToolRunModal from "@/components/tools/ToolRunModal";
 import type { ToolPayload } from "@/lib/api/types";
-import { runsApi, toolsApi } from "@/lib/api/endpoints";
+import { definitionsApi, runsApi, toolsApi } from "@/lib/api/endpoints";
 
 vi.mock("@/lib/api/endpoints", () => ({
   toolsApi: { execute: vi.fn() },
+  definitionsApi: { get: vi.fn() },
   // The outcome panel polls for the run. Never resolving keeps it on its waiting state,
   // which is all these tests need from it.
   runsApi: { get: vi.fn(() => new Promise(() => {})) },
@@ -144,6 +145,61 @@ describe("ToolRunModal file loading", () => {
    * live host with no approver recorded. It is enforced now, and the cost of enforcing it
    * was a trip to the console until this button existed.
    */
+  /**
+   * Choosing among a tool's actions.
+   *
+   * Which action a request wants is what a sentence says, and this screen fills in a
+   * schema instead. A three-action tool answered "the request said which in no words at
+   * all" and planned nothing — after the form was filled in and the button pressed.
+   */
+  describe("several actions", () => {
+    const multi = (): ToolPayload => ({ ...tool({}), actionCount: 3, definitionId: 20 });
+
+    /** What the gateway actually answers with, rather than an empty object. */
+    const dispatched = {
+      status: "planned",
+      plan: { status: "planned", model: "m", problems: [], masked_inputs: [], actions: [] },
+      dispatch: { status: "queued", reason: "Published", run_id: null, action_run_ids: {} },
+    };
+
+    const listed = {
+      actions: [
+        { id: 95, name: "Dosyayı yaz" },
+        { id: 96, name: "Dosyayı çalıştır" },
+      ],
+    };
+
+    it("asks which action, and sends the one chosen", async () => {
+      vi.mocked(definitionsApi.get).mockResolvedValue(listed as never);
+      const asked = vi.mocked(toolsApi.execute);
+      asked.mockReset();
+      asked.mockResolvedValue(dispatched as never);
+
+      const user = userEvent.setup();
+      render(<ToolRunModal tool={multi()} onClose={() => {}} />);
+
+      const picker = await screen.findByLabelText(/aksiyon|action/i);
+      await user.selectOptions(picker, "96");
+      await user.click(screen.getByRole("button", { name: /aracı çalıştır|run the tool/i }));
+
+      expect(asked.mock.calls[0][3]).toBe(96);
+    });
+
+    it("sends nothing about an action a single-action tool does not have", async () => {
+      const asked = vi.mocked(toolsApi.execute);
+      asked.mockReset();
+      asked.mockResolvedValue(dispatched as never);
+
+      const user = userEvent.setup();
+      render(<ToolRunModal tool={tool({})} onClose={() => {}} />);
+
+      await user.click(screen.getByRole("button", { name: /aracı çalıştır|run the tool/i }));
+
+      expect(screen.queryByLabelText(/aksiyon|action/i)).toBeNull();
+      expect(asked.mock.calls[0][3]).toBeUndefined();
+    });
+  });
+
   describe("approval", () => {
     const plan = (resolved: string) => ({
       status: "planned",

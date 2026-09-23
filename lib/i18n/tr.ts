@@ -633,6 +633,9 @@ export const tr = {
   "tools.run.open": "Çalıştır",
   "tools.run.submit": "Aracı çalıştır",
   "tools.run.approve": "Onayla ve çalıştır",
+  "tools.run.action": "Aksiyon",
+  "tools.run.actionHint":
+    "Bu aracın birden fazla aksiyonu var. Hangisinin gerektiği normalde bir cümleden anlaşılır; bu ekranda cümle yok, o yüzden buradan seç.",
   "tools.run.unavailable": "Araç devre dışı veya modeli seçilmemiş — MCP sunucusu bunu yayınlamıyor.",
   "tools.run.planOnly":
     "Bu ekran aracı hedeflerine karşı gerçekten çalıştırır. Onay gerektiren bir aksiyon planda durur — komutu okuyup aşağıdan onaylayabilirsin.",

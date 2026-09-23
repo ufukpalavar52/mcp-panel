@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Terminal } from "@/components/ui/Terminal";
 import RunOutcome from "@/components/console/RunOutcome";
 import CIcon from "@coreui/icons-react";
@@ -29,7 +29,7 @@ import {
   CSpinner,
 } from "@coreui/react";
 import { useT } from "@/lib/i18n";
-import { toolsApi } from "@/lib/api/endpoints";
+import { definitionsApi, toolsApi } from "@/lib/api/endpoints";
 import { ApiRequestError, ApiUnreachableError } from "@/lib/api/errors";
 import type {
   ExecutionResultPayload,
@@ -74,9 +74,51 @@ export default function ToolRunModal({
   // not inherit the previous tool's answers, whose keys may coincide while meaning
   // something entirely different.
   const [values, setValues] = useState<Record<string, unknown>>(() => defaultsOf(fields));
+
+  /*
+   * The tool's actions, for a definition that has more than one.
+   *
+   * Which action a request wants is what a sentence says, and this screen has no
+   * sentence: it fills in a schema. So a three-action tool answered "the request said
+   * which in no words at all" and planned nothing — after the form had been filled in and
+   * the button pressed, which is the worst moment to learn a screen cannot do something.
+   *
+   * Asked for rather than carried on the tool: the catalogue publishes a count, because
+   * that is what an MCP client needs, and names belong to the definition.
+   */
+  const [actions, setActions] = useState<{ id: number; name: string }[]>([]);
+  const [actionId, setActionId] = useState<number | undefined>(undefined);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<ExecutionResultPayload | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
+
+  const several = (tool?.actionCount ?? 0) > 1;
+
+  useEffect(() => {
+    if (!tool || !several) return;
+
+    let dropped = false;
+    void definitionsApi
+      .get(tool.definitionId)
+      .then((definition) => {
+        if (dropped) return;
+        const listed = definition.actions.map((action) => ({
+          id: action.id,
+          name: action.name,
+        }));
+        setActions(listed);
+        // Pre-selected rather than left empty. There is no meaningful "no action", and a
+        // list that starts on nothing makes the reader choose before they can read.
+        setActionId(listed[0]?.id);
+      })
+      // Silent: the picker simply does not appear, and the refusal that follows says what
+      // is wrong. A second error message about a list nobody asked for helps nobody.
+      .catch(() => {});
+
+    return () => {
+      dropped = true;
+    };
+  }, [tool, several]);
 
   const missing = fields.filter(
     (field) => field.required && isBlank(values[field.key]),
@@ -98,7 +140,12 @@ export default function ToolRunModal({
     setResult(null);
 
     try {
-      setResult(await toolsApi.execute(tool.name, submittable(fields, values), approved));
+      setResult(
+        await toolsApi.execute(
+          tool.name, submittable(fields, values), approved,
+          several ? actionId : undefined,
+        ),
+      );
     } catch (error) {
       // A transport failure is not a plan. Showing it as one would let "the MCP server
       // is unreachable" read like "the command was refused", which is the opposite
@@ -139,6 +186,28 @@ export default function ToolRunModal({
             <CIcon icon={cilWarning} className="mt-1 flex-shrink-0" />
             <div>{t("tools.run.planOnly")}</div>
           </CAlert>
+
+          {/* Above the fields, because it decides what the fields are for. A tool with
+              one action has no choice to make and is not asked to make one. */}
+          {several && actions.length > 0 && (
+            <div className="mb-3">
+              <CFormLabel htmlFor="run-action" className="fw-semibold small">
+                {t("tools.run.action")}
+              </CFormLabel>
+              <CFormSelect
+                id="run-action"
+                value={actionId ?? ""}
+                onChange={(event) => setActionId(Number(event.target.value))}
+              >
+                {actions.map((action) => (
+                  <option key={action.id} value={action.id}>
+                    {action.name}
+                  </option>
+                ))}
+              </CFormSelect>
+              <CFormText>{t("tools.run.actionHint")}</CFormText>
+            </div>
+          )}
 
           {fields.length === 0 ? (
             <p className="small text-body-secondary mb-0">{t("tools.run.noInputs")}</p>
@@ -212,7 +281,9 @@ export default function ToolRunModal({
 
 /** Whether a plan is sitting there waiting for somebody to say yes. */
 function awaiting(result: ExecutionResultPayload | null): boolean {
-  return result?.dispatch.status === "awaiting_approval";
+  // Optional the whole way down. A response missing its dispatch is not something this
+  // screen should decide anything about, and reading through it took the card down.
+  return result?.dispatch?.status === "awaiting_approval";
 }
 
 /**
@@ -223,7 +294,7 @@ function awaiting(result: ExecutionResultPayload | null): boolean {
  * multi-action definition fail the comparison at the other end.
  */
 function commandsOf(result: ExecutionResultPayload | null): string[] {
-  return (result?.plan.actions ?? [])
+  return (result?.plan?.actions ?? [])
     .filter((action) => !action.skipped)
     .map((action) => action.resolved);
 }
